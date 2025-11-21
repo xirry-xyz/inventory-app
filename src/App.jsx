@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 // 导入 Firebase 核心模块
 import { 
     initializeApp 
@@ -80,9 +80,128 @@ if (firebaseConfig && !initializationError) {
 const getUserCollectionPath = (userId, collectionName) => 
     `artifacts/${appId}/users/${userId}/${collectionName}`;
 
-// 定义主色调（为了兼容性，使用标准的 Tailwind 颜色，并确保对比度）
-// primary-DEFAULT = indigo-600
-// primary-light = indigo-400
+// 分类及其图标
+const categories = {
+    '全部': <Package className="w-5 h-5" />,
+    '食品生鲜': <Leaf className="w-5 h-5" />,
+    '日用百货': <ShoppingCart className="w-5 h-5" />,
+    '个护清洁': <Wrench className="w-5 h-5" />,
+    '医疗健康': <Heart className="w-5 h-5" />,
+    '猫咪相关': <Cat className="w-5 h-5" />, 
+    '其他': <Sprout className="w-5 h-5" />,
+};
+
+// --- CustomModal 组件定义 (移到 App 外部以增加稳定性) ---
+const CustomModal = ({ title, children, isOpen, onClose }) => {
+    // 使用 CSS 隐藏，而不是返回 null，确保 DOM 结构稳定
+    const visibilityClass = isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none';
+    
+    return (
+        <div 
+            className={`fixed inset-0 bg-gray-900 bg-opacity-70 z-50 flex justify-center items-center p-4 transition-opacity duration-300 ${visibilityClass}`} 
+            onClick={onClose}
+            // 确保 DOM 始终存在
+            style={{ display: 'flex' }} 
+        >
+            <div 
+                className={`bg-white rounded-4xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 ${isOpen ? 'scale-100' : 'scale-95'}`} 
+                onClick={e => e.stopPropagation()} 
+            >
+                <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-4">
+                    <h3 className="text-xl font-bold text-gray-800">{title}</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+};
+
+// --- ItemForm 组件定义 (抽象并使用 memo 隔离输入状态) ---
+const ItemForm = memo(({ newItem, setNewItem, addItem, user }) => {
+    
+    // 过滤掉 '全部' 类别，因为它不是实际物品的分类
+    const availableCategories = Object.keys(categories).filter(c => c !== '全部');
+    
+    // 优化后的 onChange handler
+    const handleInputChange = (e) => {
+        const { id, value } = e.target;
+        setNewItem(prev => ({ 
+            ...prev, 
+            [id]: value 
+        }));
+    };
+    
+    return (
+        <form onSubmit={addItem} className="space-y-5">
+            <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">物品名称</label>
+                <input
+                    key="item-name-input" 
+                    id="name"
+                    type="text"
+                    value={newItem.name}
+                    onChange={handleInputChange} // 使用优化的 handler
+                    className="mt-1 block w-full border border-gray-300 rounded-2xl shadow-sm p-3 focus:ring-indigo-600 focus:border-indigo-600 text-gray-800"
+                    required
+                />
+            </div>
+            <div>
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700">分类</label>
+                <select
+                    key="item-category-select" 
+                    id="category"
+                    value={newItem.category}
+                    onChange={handleInputChange} 
+                    className="mt-1 block w-full border border-gray-300 rounded-2xl shadow-sm p-3 focus:ring-indigo-600 focus:border-indigo-600 bg-white text-gray-800"
+                    required
+                >
+                    {availableCategories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                </select>
+            </div>
+            <div className="flex space-x-4">
+                <div className="flex-1">
+                    <label htmlFor="currentStock" className="block text-sm font-medium text-gray-700">当前库存</label>
+                    <input
+                        key="item-current-stock-input" 
+                        id="currentStock"
+                        type="number"
+                        min="0"
+                        value={newItem.currentStock}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border border-gray-300 rounded-2xl shadow-sm p-3 focus:ring-indigo-600 focus:border-indigo-600 text-gray-800"
+                        required
+                    />
+                </div>
+                <div className="flex-1">
+                    <label htmlFor="safetyStock" className="block text-sm font-medium text-gray-700">安全库存</label>
+                    <input
+                        key="item-safety-stock-input" 
+                        id="safetyStock"
+                        type="number"
+                        min="1"
+                        value={newItem.safetyStock}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border border-gray-300 rounded-2xl shadow-sm p-3 focus:ring-indigo-600 focus:border-indigo-600 text-gray-800"
+                        required
+                    />
+                </div>
+            </div>
+            <button
+                type="submit"
+                className={`w-full py-3 rounded-3xl font-bold transition duration-200 shadow-xl 
+                    ${user ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-400 cursor-not-allowed'} text-white`}
+                disabled={!user}
+            >
+                {user ? '保存物品' : '请先登录'}
+            </button>
+        </form>
+    );
+});
 
 // --- Component Definition ---
 
@@ -104,17 +223,6 @@ const App = () => {
     const [newItem, setNewItem] = useState({ name: '', safetyStock: 1, currentStock: 0, category: '日用百货' }); 
     const [statusMessage, setStatusMessage] = useState(null);
     const [activeTab, setActiveTab] = useState('home'); 
-
-    // 分类及其图标
-    const categories = {
-        '全部': <Package className="w-5 h-5" />,
-        '食品生鲜': <Leaf className="w-5 h-5" />,
-        '日用百货': <ShoppingCart className="w-5 h-5" />,
-        '个护清洁': <Wrench className="w-5 h-5" />,
-        '医疗健康': <Heart className="w-5 h-5" />,
-        '猫咪相关': <Cat className="w-5 h-5" />, 
-        '其他': <Sprout className="w-5 h-5" />,
-    };
     
     // 底部导航栏配置 (移除 'add' tab)
     const navItems = [
@@ -253,7 +361,8 @@ const App = () => {
     }, [isAuthReady, userId, configError]); 
 
     // --- CRUD Operations ---
-    const addItem = async (e) => {
+    // 使用 useCallback 包装 addItem，确保引用稳定
+    const addItem = useCallback(async (e) => {
         e.preventDefault();
         
         const name = newItem.name.trim();
@@ -288,7 +397,7 @@ const App = () => {
         } catch (e) {
             showStatus(`添加失败: ${e.message}`, true, 5000);
         }
-    };
+    }, [newItem, user, configError, userId, showStatus]); // 依赖 newItem, user 等
 
     const updateStock = async (id, newStock) => {
          if (!user || configError || !db || !userId) {
@@ -339,6 +448,7 @@ const App = () => {
         }
     };
 
+
     // --- Filtering and Display Logic ---
     const itemsToRestock = inventory.filter(item => item.currentStock <= item.safetyStock);
 
@@ -368,28 +478,6 @@ const App = () => {
     
     // --- UI Components ---
     
-    // 模态框样式调整
-    const CustomModal = ({ title, children, isOpen, onClose }) => {
-        if (!isOpen) return null;
-        
-        return (
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 flex justify-center items-center p-4" onClick={onClose}>
-                <div 
-                    className="bg-white rounded-4xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 scale-100" 
-                    onClick={e => e.stopPropagation()} 
-                >
-                    <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-4">
-                        <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors">
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
-                    {children}
-                </div>
-            </div>
-        );
-    };
-
     // 认证模态框样式调整
     const AuthModal = ({ isOpen, handleGoogleSignIn }) => {
         const [authLoading, setAuthLoading] = useState(false);
@@ -769,69 +857,13 @@ const App = () => {
                 isOpen={showItemModal} 
                 onClose={() => setShowItemModal(false)}
             >
-                <form onSubmit={addItem} className="space-y-5">
-                    <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">物品名称</label>
-                        <input
-                            id="name"
-                            type="text"
-                            value={newItem.name}
-                            onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                            className="mt-1 block w-full border border-gray-300 rounded-2xl shadow-sm p-3 focus:ring-indigo-600 focus:border-indigo-600 text-gray-800"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="category" className="block text-sm font-medium text-gray-700">分类</label>
-                        <select
-                            id="category"
-                            value={newItem.category}
-                            // 确保新物品默认分类包含 '猫咪相关'
-                            onChange={(e) => setNewItem({ ...newItem, category: e.target.value })} 
-                            className="mt-1 block w-full border border-gray-300 rounded-2xl shadow-sm p-3 focus:ring-indigo-600 focus:border-indigo-600 bg-white text-gray-800"
-                            required
-                        >
-                            {/* 过滤掉 '全部' 类别，因为它不是实际物品的分类 */}
-                            {Object.keys(categories).filter(c => c !== '全部').map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex space-x-4">
-                        <div className="flex-1">
-                            <label htmlFor="currentStock" className="block text-sm font-medium text-gray-700">当前库存</label>
-                            <input
-                                id="currentStock"
-                                type="number"
-                                min="0"
-                                value={newItem.currentStock}
-                                onChange={(e) => setNewItem({ ...newItem, currentStock: e.target.value })}
-                                className="mt-1 block w-full border border-gray-300 rounded-2xl shadow-sm p-3 focus:ring-indigo-600 focus:border-indigo-600 text-gray-800"
-                                required
-                            />
-                        </div>
-                        <div className="flex-1">
-                            <label htmlFor="safetyStock" className="block text-sm font-medium text-gray-700">安全库存</label>
-                            <input
-                                id="safetyStock"
-                                type="number"
-                                min="1"
-                                value={newItem.safetyStock}
-                                onChange={(e) => setNewItem({ ...newItem, safetyStock: e.target.value })}
-                                className="mt-1 block w-full border border-gray-300 rounded-2xl shadow-sm p-3 focus:ring-indigo-600 focus:border-indigo-600 text-gray-800"
-                                required
-                            />
-                        </div>
-                    </div>
-                    <button
-                        type="submit"
-                        className={`w-full py-3 rounded-3xl font-bold transition duration-200 shadow-xl 
-                            ${user ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-400 cursor-not-allowed'} text-white`}
-                        disabled={!user}
-                    >
-                        {user ? '保存物品' : '请先登录'}
-                    </button>
-                </form>
+                {/* 将表单内容作为子组件传递 */}
+                <ItemForm 
+                    newItem={newItem} 
+                    setNewItem={setNewItem} 
+                    addItem={addItem} 
+                    user={user}
+                />
             </CustomModal>
             
             {/* 认证模态框 */}
