@@ -1,10 +1,9 @@
-// 这是 PostCSS 官方推荐的插件配置数组语法。
-// 它可以确保在不同构建环境中（如 Vite 和 Vercel）的兼容性。
-
+// 针对您的 Vite/PostCSS v8.4.6 环境，采用最稳健的对象配置语法。
 module.exports = {
-  // 插件必须以数组形式列出
-  plugins: [
-    require('tailwindcss'),
-    require('autoprefixer'),
-  ]
-}
+  plugins: {
+    // 确保 Tailwind CSS 插件被正确加载
+    'tailwindcss': {},
+    // 自动为 CSS 规则添加浏览器前缀
+    'autoprefixer': {},
+  },
+};
