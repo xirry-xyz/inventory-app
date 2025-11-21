@@ -799,10 +799,10 @@ const App = () => {
             <header className="bg-gradient-to-r from-indigo-600 to-indigo-400 p-6 pb-20 rounded-b-4xl shadow-xl mb-[-5rem] relative z-0">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex justify-between items-center text-white">
-                        <h1 className="text-3xl font-extrabold cursor-pointer" onClick={() => setActiveTab('home')}>家庭管家</h1>
+                        <h1 className="text-3xl font-extrabold cursor-pointer" onClick={() => setActiveTab('home')}>家庭库存管家</h1>
                         {/* 桌面端/大屏幕的设置/登录按钮 */}
                         <div className="hidden sm:flex items-center space-x-4">
-                            {user && <span className="text-sm font-medium">欢迎, {user.displayName || user.email || '用户'}</span>}
+                            {user && <span className="text-sm font-medium">泥好， {user.displayName || user.email || '用户'}</span>}
                             <button
                                 onClick={() => setActiveTab('settings')}
                                 className="p-2 rounded-full bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
@@ -841,7 +841,7 @@ const App = () => {
                         </div>
                     </div>
                     <p className="text-sm text-indigo-200 mt-1 text-white opacity-70">
-                        {user ? '您的云端库存管理器' : '请登录以启用云同步'}
+                        {user ? 'Xirry的云端库存管理器' : '请登录以启用云同步'}
                     </p>
                 </div>
             </header>
