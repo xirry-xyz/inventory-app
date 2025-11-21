@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+// import './index.css'; // 由于编译问题，此行保持注释，依赖您的构建环境处理全局样式
+
 import { 
   Plus, 
   Minus, 

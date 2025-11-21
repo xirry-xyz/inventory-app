@@ -1,9 +1,9 @@
-// 针对您的 Vite/PostCSS v8.4.6 环境，采用最稳健的对象配置语法。
+// 针对您的 Vite/PostCSS 环境，这是最稳健的对象配置语法。
+// 确保您已经运行 npm install 并提交了 package-lock.json 文件。
 module.exports = {
   plugins: {
-    // 确保 Tailwind CSS 插件被正确加载
+    // 明确声明插件名称
     'tailwindcss': {},
-    // 自动为 CSS 规则添加浏览器前缀
     'autoprefixer': {},
   },
 };
