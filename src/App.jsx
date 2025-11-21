@@ -16,7 +16,7 @@ import {
   Stethoscope,
   LayoutGrid,
   Loader2,
-  Users // 导入用户图标
+  Users 
 } from 'lucide-react';
 
 // --- [ FIREBASE IMPORTS ] ---
@@ -36,8 +36,8 @@ import {
   updateDoc, 
   deleteDoc,
   doc,
-  serverTimestamp, // 用于记录时间戳
-  setLogLevel // 用于调试日志
+  serverTimestamp, 
+  setLogLevel 
 } from 'firebase/firestore';
 
 // ----------------------------------------------------
@@ -85,7 +85,6 @@ export default function App() {
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   // --- App State ---
-  // items 现在将由 Firestore 监听器更新
   const [items, setItems] = useState([]); 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -126,20 +125,28 @@ export default function App() {
 
       // 3. 处理认证
       const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
-        if (user) {
+        // 核心修复：确保 user 对象存在且包含 uid
+        if (user && user.uid) { 
           setUserId(user.uid);
           setIsAuthReady(true);
+          console.log("Auth Success. User ID:", user.uid);
         } else {
-          // 尝试使用 customToken 登录，如果不存在则匿名登录
+          // 如果用户未登录，尝试进行登录
+          console.log("No user found. Attempting sign-in...");
           try {
               if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                   await signInWithCustomToken(firebaseAuth, __initial_auth_token);
+                  console.log("Signed in with custom token.");
               } else {
                   await signInAnonymously(firebaseAuth);
+                  console.log("Signed in anonymously.");
               }
+              // 注意: 成功的登录操作会再次触发 onAuthStateChanged，最终进入 if (user) 分支
+
           } catch(e) {
              console.error("Auth sign-in failed:", e);
-             setIsAuthReady(true);
+             setError("登录失败，请检查网络或配置。");
+             setIsAuthReady(true); // 即使失败也要标记为就绪，以显示错误信息
           }
         }
       });
@@ -150,18 +157,17 @@ export default function App() {
     } catch (e) {
       console.error("Firebase Initialization Error:", e);
       setError("Firebase 初始化失败。请检查配置。");
-      setIsAuthReady(true); // 即使失败也要标记为就绪，以解除加载状态
+      setIsAuthReady(true); 
     }
-  }, []); // 仅在组件挂载时运行一次
+  }, []); 
 
   // --- [ FIRESTORE DATA LISTENER ] ---
   useEffect(() => {
     // 只有在认证和数据库准备好后才开始监听
     if (!isAuthReady || !db || !userId) return;
-
+    
     // 使用公共路径进行协作库存管理
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    // 路径: /artifacts/{appId}/public/data/inventory
     const inventoryCollectionRef = collection(db, `artifacts/${appId}/public/data/inventory`);
     
     const q = query(inventoryCollectionRef);
@@ -182,6 +188,10 @@ export default function App() {
       // 如果集合为空，初始化演示数据
       if (fetchedItems.length === 0) {
         console.log("Collection is empty. Initializing demo data.");
+        
+        // 确保在添加演示数据时，等待数据加载完成标志已设置为 false
+        if (isLoadingData) return; 
+
         // 在 Firestore 中添加演示数据
         const initialDataPromises = INITIAL_DATA.map(item => 
           addDoc(inventoryCollectionRef, {
@@ -205,7 +215,7 @@ export default function App() {
 
     // 清理函数：组件卸载时停止监听
     return () => unsubscribeSnapshot();
-  }, [isAuthReady, db, userId]);
+  }, [isAuthReady, db, userId, isLoadingData]);
 
   // --- Logic: Firestore CRUD Operations ---
   
