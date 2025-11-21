@@ -23,53 +23,44 @@ let initializationError = null;
 
 let firebaseConfig = null;
 let initialAuthToken = null;
-// 新增：获取应用ID，用于构建 Firestore 的正确路径
 let appId = 'default-app-id'; 
 
-// 统一环境变量获取逻辑 (使用 process.env 避免 import.meta 警告)
-const getEnvVar = (name) => {
-    if (typeof process !== 'undefined' && process.env && process.env[name]) {
-        return process.env[name];
+// 1. 获取 Canvas 环境的特殊变量
+const configString = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+appId = typeof __app_id !== 'undefined' ? __app_id : appId; 
+
+if (configString && configString.trim() !== '' && configString.trim() !== '{}') {
+    // 优先使用 Canvas 提供的配置
+    try {
+        firebaseConfig = JSON.parse(configString);
+    } catch (e) {
+        initializationError = `解析特殊配置(__firebase_config)失败: ${e.message}。请检查 JSON 格式。`;
     }
-    return null;
-};
-
-// 检查 Vercel/Vite 标准环境变量
-const VITE_PROJECT_ID = getEnvVar('VITE_FIREBASE_PROJECT_ID');
-
-if (VITE_PROJECT_ID) {
-    // Vercel/Vite 环境下的标准环境变量
-    firebaseConfig = {
-        apiKey: getEnvVar('VITE_FIREBASE_API_KEY'),
-        authDomain: getEnvVar('VITE_FIREBASE_AUTH_DOMAIN'),
-        projectId: VITE_PROJECT_ID,
-        storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET'),
-        messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID'),
-        appId: getEnvVar('VITE_FIREBASE_APP_ID')
+} else {
+    // 2. 如果 Canvas 配置缺失，使用硬编码/环境变量（您需要在这里粘贴您的真实配置）
+    
+    // <--- [YOUR_FIREBASE_CONFIG_HERE] --->
+    // 警告：如果此应用部署在公共环境中，硬编码密钥是不安全的做法。
+    // 在生产环境中，应使用 Vercel 或 Netlify 的环境变量来加载这些密钥。
+    const hardcodedConfig = {
+      apiKey: "AIzaSyCbQZ-qkJuPr3lmufKbVgK1U_Rmyfy4u0E",
+  authDomain: "home-inventory-manager-5ec7a.firebaseapp.com",
+  projectId: "home-inventory-manager-5ec7a",
+  storageBucket: "home-inventory-manager-5ec7a.firebasestorage.app",
+  messagingSenderId: "712500151586",
+  appId: "1:712500151586:web:b44aa3d513b97a174d917b"
     };
-} 
-// 尝试从 Canvas 环境的特殊全局变量中获取
-else {
-    const configString = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-    initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-    // 修复：获取 __app_id
-    appId = typeof __app_id !== 'undefined' ? __app_id : appId; 
+    // <--- [YOUR_FIREBASE_CONFIG_HERE] --->
 
-    if (configString && configString.trim() !== '' && configString.trim() !== '{}') {
-        try {
-            firebaseConfig = JSON.parse(configString);
-        } catch (e) {
-            initializationError = `解析特殊配置(__firebase_config)失败: ${e.message}。请检查 JSON 格式。`;
-        }
+    if (hardcodedConfig.projectId && hardcodedConfig.projectId !== "YOUR_PROJECT_ID") {
+        firebaseConfig = hardcodedConfig;
+    } else {
+        initializationError = initializationError || 
+                              'Firebase配置缺失或未更新。请在Firebase控制台获取配置，并替换代码中的占位符，或设置部署环境的环境变量。';
     }
 }
 
-
-// 2. 检查配置是否仍然缺失
-if (!firebaseConfig || !firebaseConfig.projectId) {
-    initializationError = initializationError || 
-                          'Firebase配置缺失。请在Vercel上设置VITE_FIREBASE_* 环境变量，或在Canvas环境中提供__firebase_config。';
-}
 
 // 3. 尝试初始化 Firebase App
 if (firebaseConfig && !initializationError) {
@@ -84,7 +75,6 @@ if (firebaseConfig && !initializationError) {
 }
 
 // 辅助函数：获取用户私有数据的集合路径 (用于 Firestore)
-// 修复：使用标准的 Canvas 私有数据路径结构
 const getUserCollectionPath = (userId, collectionName) => 
     `artifacts/${appId}/users/${userId}/${collectionName}`;
 
@@ -537,7 +527,7 @@ const App = () => {
                     <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative">
                         <strong className="font-bold">配置错误：</strong>
                         <span className="block sm:inline">{configError}</span>
-                        <p className="text-sm mt-1">请在 Vercel 项目设置中设置 `VITE_FIREBASE_*` 环境变量。</p>
+                        <p className="text-sm mt-1">请替换 App.jsx 中的 Firebase 配置占位符，或在部署环境（如 Vercel）中设置 `VITE_FIREBASE_*` 环境变量。</p>
                     </div>
                 )}
             </header>
@@ -557,7 +547,7 @@ const App = () => {
                 {itemsToRestock > 0 ? (
                     <div className="flex items-center text-red-600 bg-red-50 p-3 rounded-lg font-medium w-full sm:w-auto">
                         <AlertTriangle className="w-5 h-5 mr-2" />
-                        有 <span className="font-bold mx-1">{itemsToStock}</span> 个物品库存不足，建议补货。
+                        有 <span className="font-bold mx-1">{itemsToRestock}</span> 个物品库存不足，建议补货。
                     </div>
                 ) : (
                     <div className="flex items-center text-green-600 bg-green-50 p-3 rounded-lg font-medium w-full sm:w-auto">
