@@ -41,22 +41,23 @@ if (configString && configString.trim() !== '' && configString.trim() !== '{}') 
         initializationError = `解析特殊配置(__firebase_config)失败: ${e.message}。请检查 JSON 格式。`;
     }
 } else {
-    // 2. 如果 Canvas 配置缺失，使用硬编码/环境变量（请替换为您真实的 Firebase 配置）
+    // 2. 如果 Canvas 配置缺失，使用硬编码/环境变量 (已更新为用户提供的配置)
     
     // <--- [YOUR_FIREBASE_CONFIG_HERE] --->
     const hardcodedConfig = {
-      apiKey: "YOUR_API_KEY", 
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyCbQZ-qkJuPr3lmufKbVgK1U_Rmyfy4u0E",
+      authDomain: "home-inventory-manager-5ec7a.firebaseapp.com",
+      projectId: "home-inventory-manager-5ec7a",
+      storageBucket: "home-inventory-manager-5ec7a.firebasestorage.app",
+      messagingSenderId: "712500151586",
+      appId: "1:712500151586:web:b44aa3d513b97a174d917b"
     };
     // <--- [YOUR_FIREBASE_CONFIG_HERE] --->
 
     if (hardcodedConfig.projectId && hardcodedConfig.projectId !== "YOUR_PROJECT_ID") {
         firebaseConfig = hardcodedConfig;
     } else {
+        // 如果用户提供的配置有问题，则设置错误
         initializationError = initializationError || 
                               'Firebase配置缺失或未更新。请在Firebase控制台获取配置，并替换代码中的占位符，或设置部署环境的环境变量。';
     }
