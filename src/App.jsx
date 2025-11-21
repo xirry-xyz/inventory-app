@@ -14,29 +14,34 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'inventory-default-ap
 let firebaseConfig = null;
 let initializationError = null;
 
+// 尝试解析配置
 try {
     const configString = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
     if (configString) {
+        // 配置字符串存在，尝试解析
         firebaseConfig = JSON.parse(configString);
     } else {
+        // 配置字符串不存在
         initializationError = 'Firebase配置缺失。无法初始化。';
     }
 } catch (e) {
     console.error("Failed to parse __firebase_config:", e);
+    // 解析失败
     initializationError = `解析配置失败: ${e.message}`;
 }
 
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
+// 尝试初始化 Firebase App
 if (firebaseConfig && !initializationError) {
-    // 2. 只有在配置可用时才尝试初始化
     try {
         firebaseApp = initializeApp(firebaseConfig);
         db = getFirestore(firebaseApp);
         auth = getAuth(firebaseApp);
     } catch (e) {
         console.error("Firebase Initialization Error:", e);
-        initializationError = `Firebase初始化失败: ${e.message}`;
+        // 初始化服务失败
+        initializationError = `Firebase初始化实例失败: ${e.message}`;
     }
 }
 
@@ -51,7 +56,7 @@ const App = () => {
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
-    // 状态中存储初始化错误信息
+    // 使用预先确定的初始化错误状态
     const [error, setError] = useState(initializationError); 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('全部');
@@ -73,20 +78,20 @@ const App = () => {
 
     // --- 认证和 Firestore 启动 ---
     useEffect(() => {
-        // 如果外部配置失败，直接返回
+        // 如果外部配置失败或初始化时已经有错误，直接返回
         if (error) {
             setLoading(false);
             return;
         }
 
         if (!auth || !db) {
-            // 如果初始化失败（但不是配置缺失），设置错误信息并停止加载
-            if (!error) setError('Firebase 初始化实例失败。');
+            // 这不应该发生，但作为最后的保险
+            setError('Firebase 实例未定义，请检查初始化过程。');
             setLoading(false);
             return;
         }
 
-        // 1. 登录
+        // 1. 登录函数
         const signIn = async () => {
             try {
                 if (initialAuthToken) {
@@ -113,12 +118,13 @@ const App = () => {
 
         signIn(); // 启动登录流程
         return () => unsubscribe(); // 清理监听器
-    }, [error]); // 依赖 error，如果 config 缺失，此 effect 不会运行
+    }, [error]); 
 
     // --- 数据获取 (实时监听) ---
     useEffect(() => {
         // 关键：等待认证就绪且获取到 userId 后才开始查询 Firestore
         if (error || !isAuthReady || !db || !userId) {
+            // 如果认证就绪但没有 userId (匿名登录失败或配置问题)，设置错误
             if (isAuthReady && !userId && !error) {
                 setError('用户认证未完成，无法同步数据。');
             }
@@ -156,7 +162,7 @@ const App = () => {
         });
 
         return () => unsubscribe(); // 清理快照监听器
-    }, [isAuthReady, userId, error]); // 依赖认证状态和 userId
+    }, [isAuthReady, userId, error]); 
 
     // --- CRUD Operations ---
     
@@ -169,7 +175,7 @@ const App = () => {
 
     const addItem = async (e) => {
         e.preventDefault();
-        if (!db || !userId) return;
+        if (!db || !userId) return showStatus('数据库未就绪。');
         
         const name = newItem.name.trim();
         if (!name) {
@@ -189,7 +195,6 @@ const App = () => {
 
         try {
             const inventoryCollectionPath = getUserCollectionPath(userId, 'inventory');
-            // 使用 addDoc 自动生成文档 ID，这是创建新文档的推荐方式
             await addDoc(collection(db, inventoryCollectionPath), itemToAdd); 
 
             setShowModal(false);
@@ -202,7 +207,7 @@ const App = () => {
     };
 
     const updateStock = async (id, newStock) => {
-        if (!db || !userId) return;
+        if (!db || !userId) return showStatus('数据库未就绪。');
 
         try {
             const inventoryCollectionPath = getUserCollectionPath(userId, 'inventory');
@@ -218,10 +223,9 @@ const App = () => {
     };
 
     const deleteItem = async (id) => {
-        if (!db || !userId) return;
+        if (!db || !userId) return showStatus('数据库未就绪。');
 
-        // 替换 alert/confirm 使用 CustomModal for confirmation in a real app
-        // 这里暂时使用 window.confirm，但在生产环境中应使用自定义模态框
+        // 使用 window.confirm 替代自定义模态框，但请注意这是临时解决方案
         if (!window.confirm('确定要删除此项目吗？')) return; 
 
         try {
@@ -238,12 +242,8 @@ const App = () => {
     // --- Filtering and Display Logic ---
     
     const filteredInventory = inventory.filter(item => {
-        // 1. 搜索过滤
         const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        // 2. 分类过滤
         const matchesCategory = activeCategory === '全部' || item.category === activeCategory;
-        
         return matchesSearch && matchesCategory;
     });
 
