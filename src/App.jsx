@@ -8,7 +8,7 @@ import {
     signInWithCustomToken, 
     onAuthStateChanged, 
     signOut,                       
-    signInAnonymously,
+    // 移除 signInAnonymously 
     GoogleAuthProvider,            
     signInWithPopup                
 } from 'firebase/auth';
@@ -47,7 +47,7 @@ if (configString && configString.trim() !== '' && configString.trim() !== '{}') 
       apiKey: "AIzaSyCbQZ-qkJuPr3lmufKbVgK1U_Rmyfy4u0E",
       authDomain: "home-inventory-manager-5ec7a.firebaseapp.com",
       projectId: "home-inventory-manager-5ec7a",
-      storageBucket: "home-inventory-manager-5ec7a.firebasestorage.app",
+      storageBucket: "home-inventory-manager-5ec7a.firebasestorage.com",
       messagingSenderId: "712500151586",
       appId: "1:712500151586:web:b44aa3d513b97a174d917b"
     };
@@ -74,11 +74,14 @@ if (firebaseConfig && !initializationError) {
 }
 
 // 辅助函数：获取用户私有数据的集合路径 (用于 Firestore)
+// 由于不再允许匿名，userId 必须是真实的 UID
 const getUserCollectionPath = (userId, collectionName) => {
-    if (userId && userId !== 'LOCAL_USER_MODE' && !userId.startsWith('anonymous-')) {
-        return `artifacts/${appId}/users/${userId}/${collectionName}`;
+    // 如果没有有效的 userId (未登录)，则返回一个不应存在的路径以避免错误写入
+    if (!userId || userId === 'LOCAL_USER_MODE') {
+        // 返回一个无效路径或一个不执行操作的标记
+        return null; 
     }
-    return `artifacts/${appId}/users/${userId || 'fallback-id'}/${collectionName}`;
+    return `artifacts/${appId}/users/${userId}/${collectionName}`;
 }
 
 
@@ -93,16 +96,14 @@ const categories = {
     '其他': <Sprout className="w-5 h-5" />,
 };
 
-// --- CustomModal 组件定义 (移到 App 外部以增加稳定性) ---
+// --- CustomModal 组件定义 ---
 const CustomModal = ({ title, children, isOpen, onClose }) => {
-    // 使用 CSS 隐藏，而不是返回 null，确保 DOM 结构稳定
     const visibilityClass = isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none';
     
     return (
         <div 
             className={`fixed inset-0 bg-gray-900 bg-opacity-70 z-50 flex justify-center items-center p-4 transition-opacity duration-300 ${visibilityClass}`} 
             onClick={onClose}
-            // 确保 DOM 始终存在
             style={{ display: 'flex' }} 
         >
             <div 
@@ -121,13 +122,11 @@ const CustomModal = ({ title, children, isOpen, onClose }) => {
     );
 };
 
-// --- ItemForm 组件定义 (抽象并使用 memo 隔离输入状态) ---
+// --- ItemForm 组件定义 ---
 const ItemForm = memo(({ newItem, setNewItem, addItem, user }) => {
     
-    // 过滤掉 '全部' 类别，因为它不是实际物品的分类
     const availableCategories = Object.keys(categories).filter(c => c !== '全部');
     
-    // 优化后的 onChange handler
     const handleInputChange = (e) => {
         const { id, value } = e.target;
         setNewItem(prev => ({ 
@@ -136,6 +135,9 @@ const ItemForm = memo(({ newItem, setNewItem, addItem, user }) => {
         }));
     };
     
+    // 检查用户是否已登录 (user 存在且有 uid)
+    const isLoggedIn = !!user && !!user.uid;
+
     return (
         <form onSubmit={addItem} className="space-y-5">
             <div>
@@ -145,7 +147,7 @@ const ItemForm = memo(({ newItem, setNewItem, addItem, user }) => {
                     id="name"
                     type="text"
                     value={newItem.name}
-                    onChange={handleInputChange} // 使用优化的 handler
+                    onChange={handleInputChange} 
                     className="mt-1 block w-full border border-gray-300 rounded-2xl shadow-sm p-3 focus:ring-indigo-600 focus:border-indigo-600 text-gray-800"
                     required
                 />
@@ -196,10 +198,10 @@ const ItemForm = memo(({ newItem, setNewItem, addItem, user }) => {
             <button
                 type="submit"
                 className={`w-full py-3 rounded-3xl font-bold transition duration-200 shadow-xl 
-                    ${user ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-400 cursor-not-allowed'} text-white`}
-                disabled={!user}
+                    ${isLoggedIn ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-400 cursor-not-allowed'} text-white`}
+                disabled={!isLoggedIn}
             >
-                {user ? '保存物品' : '请先登录'}
+                {isLoggedIn ? '保存物品' : '请先登录'}
             </button>
         </form>
     );
@@ -208,26 +210,23 @@ const ItemForm = memo(({ newItem, setNewItem, addItem, user }) => {
 // --- Component Definition ---
 
 const App = () => {
-    const [user, setUser] = useState(null);
+    // user 现在必须是一个真正的 Google User
+    const [user, setUser] = useState(null); 
     const [userId, setUserId] = useState(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
     
     const [configError, setConfigError] = useState(initializationError); 
-    // 默认不显示，由 onAuthStateChanged 决定是否显示
     const [showAuthModal, setShowAuthModal] = useState(false); 
     
     const [searchTerm, setSearchTerm] = useState('');
-    // 默认激活“全部”
     const [activeCategory, setActiveCategory] = useState('全部');
     const [showItemModal, setShowItemModal] = useState(false);
-    // 新增项默认分类为 '日用百货'
     const [newItem, setNewItem] = useState({ name: '', safetyStock: 1, currentStock: 0, category: '日用百货' }); 
     const [statusMessage, setStatusMessage] = useState(null);
     const [activeTab, setActiveTab] = useState('home'); 
     
-    // 底部导航栏配置 (移除 'add' tab)
     const navItems = [
         { id: 'home', icon: Home, label: '主页' },
         { id: 'restock', icon: Bell, label: '补货提醒' },
@@ -244,7 +243,7 @@ const App = () => {
 
     // --- 认证流程和监听 (核心修复区域) ---
     useEffect(() => {
-        if (configError) {
+        if (configError || !auth) {
             setLoading(false);
             setIsAuthReady(true);
             setUserId('LOCAL_USER_MODE');
@@ -254,51 +253,56 @@ const App = () => {
         // 1. 设置状态监听器
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
+                // 确保用户不是匿名用户（虽然理论上我们已移除匿名登录）
+                if (currentUser.isAnonymous) {
+                     // 如果意外地获得了匿名用户，强制注销并要求登录
+                     signOut(auth).then(() => {
+                        setUser(null);
+                        setUserId('LOCAL_USER_MODE');
+                        setShowAuthModal(true);
+                     });
+                     return;
+                }
+                
+                // 真正的 Google 认证用户
                 setUser(currentUser);
                 setUserId(currentUser.uid); 
-                
-                // *** 核心修复点 1：如果用户是匿名的，我们仍然需要提示他进行 Google 登录 ***
-                if (currentUser.isAnonymous) {
-                    setShowAuthModal(true); // 提示升级账号
-                } else {
-                    // 已通过 Google 或其他方式登录
-                    setShowAuthModal(false); 
-                }
+                setShowAuthModal(false); 
+
             } else {
-                // 没有用户 (完全注销或首次加载)
+                // 没有用户 (完全未登录/已注销)
                 setUser(null);
                 setUserId('LOCAL_USER_MODE'); 
                 
-                // *** 核心修复点 2：如果显式注销或匿名登录失败，直接显示登录提示 ***
+                // *** 核心修复点：强制显示登录提示 ***
                 setShowAuthModal(true); 
             }
 
-            // 无论如何，认证过程已完成
             if (!isAuthReady) {
                 setIsAuthReady(true);
                 setLoading(false); 
             }
         });
 
-        // 2. 初始登录尝试 (仅在首次渲染时运行一次)
-        if (!isAuthReady) {
-            // Vercel/Web 模式：如果不是 Canvas 环境，直接尝试匿名登录
-            if (!initialAuthToken) {
-                signInAnonymously(auth).catch(e => {
-                    console.error("Anonymous Sign-in Failed:", e);
-                    // 仅设置错误，onAuthStateChanged 会处理 null 用户状态
-                    setConfigError(`Firebase匿名认证失败: ${e.message}`);
-                });
-            } else {
-                // Canvas 模式：尝试 Custom Token 认证
-                 signInWithCustomToken(auth, initialAuthToken).catch(e => {
-                    console.error("Custom Token 认证失败，尝试匿名登录:", e);
-                    signInAnonymously(auth).catch(anonErr => {
-                        setConfigError(`Canvas环境认证失败: ${e.message} / ${anonErr.message}`);
-                    });
-                });
-            }
+        // 2. 初始登录尝试 (仅在 Canvas 环境下，Vercel 上跳过)
+        if (!isAuthReady && initialAuthToken) {
+             signInWithCustomToken(auth, initialAuthToken).catch(e => {
+                console.error("Custom Token 认证失败，请手动登录:", e);
+                // 失败后 onAuthStateChanged 会将 user 设为 null，并触发登录弹窗
+            });
         }
+        
+        // 确保在首次加载且未登录时弹出登录框 (Vercel 部署的默认行为)
+        if (!isAuthReady && !auth.currentUser) {
+             // 延迟设置，确保 onAuthStateChanged 已经运行一次
+             const timer = setTimeout(() => {
+                 if (!auth.currentUser) {
+                     setShowAuthModal(true);
+                 }
+             }, 500);
+             return () => { unsubscribe(); clearTimeout(timer); };
+        }
+
 
         return () => unsubscribe();
     }, [configError]); // 依赖中只保留 configError
@@ -313,11 +317,12 @@ const App = () => {
         const provider = new GoogleAuthProvider();
         try {
             await signInWithPopup(auth, provider);
-            // onAuthStateChanged 会处理状态更新，并将 userId 设置为 user.uid
+            // onAuthStateChanged 会处理状态更新
             showStatus('Google 登录成功！', false);
+            setShowAuthModal(false); // 登录成功后关闭模态框
         } catch (error) {
             if (error.code === 'auth/unauthorized-domain') {
-                 showStatus('Google 登录失败: Firebase: Error (auth/unauthorized-domain). 请确保已在 Firebase 控制台的 Auth > Settings > Authorized domains 中添加此域名。', true, 10000);
+                 showStatus('Google 登录失败: 请确保已在 Firebase 控制台的 Auth > Settings > Authorized domains 中添加此域名。', true, 10000);
             } else if (error.code !== 'auth/popup-closed-by-user') {
                 showStatus(`Google 登录失败: ${error.message}`, true, 5000);
             }
@@ -329,7 +334,7 @@ const App = () => {
         try {
             await signOut(auth);
             showStatus('已成功注销', false);
-            // onAuthStateChanged 会更新 user/userId 状态，并触发显示 AuthModal
+            // onAuthStateChanged 会更新状态，并再次触发 AuthModal
         } catch (e) {
             showStatus(`注销失败: ${e.message}`, true, 5000);
         }
@@ -337,16 +342,21 @@ const App = () => {
     
     // --- 数据获取 (实时监听) ---
     useEffect(() => {
-        // 只有当认证就绪且用户是非匿名登录时才开始数据同步
-        if (configError || !isAuthReady || !db || !user || !user.uid || user.isAnonymous) {
-             // 如果用户是匿名登录，我们清空库存，强制他们升级账号
+        // 只有当认证就绪且用户是真正的 Google 用户时才开始数据同步
+        if (configError || !isAuthReady || !db || !user || !user.uid) {
              setInventory([]);
             return;
         }
         
-        // 确保使用真正的 UID 来构建路径 (非匿名用户)
+        // 确保使用真实的 UID
         const actualUserId = user.uid;
         const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
+        
+        if (!inventoryCollectionPath) {
+            console.error("Firestore Error: 无法构建有效的集合路径。");
+            return;
+        }
+
         const q = query(collection(db, inventoryCollectionPath));
 
         setLoading(true);
@@ -373,9 +383,8 @@ const App = () => {
             setLoading(false);
         }, (err) => {
             if (err.code === 'permission-denied') {
-                 // 如果是匿名用户但尝试读取私有数据，这里会触发
-                 // 但由于上面加了 user.isAnonymous 检查，理论上不会走到这里。
-                 setConfigError(`数据读取失败: Firestore 权限被拒绝。`);
+                 // 权限错误通常意味着用户未登录或 Firestore 规则阻止了访问
+                 setConfigError(`数据读取失败: Firestore 权限被拒绝。请确保您的安全规则允许已认证的用户访问。`);
             } else {
                  setConfigError(`数据同步错误: ${err.message}`);
             }
@@ -386,7 +395,6 @@ const App = () => {
     }, [isAuthReady, user, db, configError]); 
 
     // --- CRUD Operations ---
-    // 使用 useCallback 包装 addItem，确保引用稳定
     const addItem = useCallback(async (e) => {
         e.preventDefault();
         
@@ -396,16 +404,21 @@ const App = () => {
             return;
         }
         
-        // *** 核心检查：非匿名登录且 user 存在才允许写入 ***
-        if (!user || !user.uid || user.isAnonymous || configError || !db) {
+        // 核心检查：user 存在且有 uid 且无配置错误才允许写入
+        if (!user || !user.uid || configError || !db) {
             console.error("添加物品失败：请先使用 Google 账号登录。");
             showStatus('错误：请先登录才能添加和同步数据。', true, 4000);
             setShowAuthModal(true);
             return;
         }
         
-        // 使用真正的 UID 来构建路径
         const actualUserId = user.uid;
+        const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
+        
+        if (!inventoryCollectionPath) {
+             showStatus('错误：无法获取存储路径，请刷新重试。', true, 4000);
+             return;
+        }
 
         const itemToAdd = {
             ...newItem,
@@ -418,7 +431,6 @@ const App = () => {
         };
 
         try {
-            const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
             await addDoc(collection(db, inventoryCollectionPath), itemToAdd); 
 
             setShowItemModal(false);
@@ -430,16 +442,18 @@ const App = () => {
     }, [newItem, user, configError, showStatus]); 
 
     const updateStock = async (id, newStock) => {
-         // *** 核心检查 ***
-         if (!user || !user.uid || user.isAnonymous || configError || !db) {
+         // 核心检查
+         if (!user || !user.uid || configError || !db) {
             showStatus('错误：请先登录才能修改数据。', true, 4000);
             setShowAuthModal(true);
             return;
         }
         const actualUserId = user.uid;
+        const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
+
+        if (!inventoryCollectionPath) return; // 再次检查路径有效性
 
         try {
-            const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
             const itemRef = doc(db, inventoryCollectionPath, id);
             await updateDoc(itemRef, { 
                 currentStock: Math.max(0, newStock), 
@@ -451,19 +465,20 @@ const App = () => {
     };
 
     const deleteItem = async (id) => {
-         // *** 核心检查 ***
-         if (!user || !user.uid || user.isAnonymous || configError || !db) {
+         // 核心检查
+         if (!user || !user.uid || configError || !db) {
             showStatus('错误：请先登录才能删除数据。', true, 4000);
             setShowAuthModal(true);
             return;
         }
         const actualUserId = user.uid;
-        
-        // 使用 window.confirm 作为临时替代方案，但应该用自定义模态框
+        const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
+
+        if (!inventoryCollectionPath) return;
+
         if (!window.confirm('确定要删除此项目吗？')) return; 
 
         try {
-            const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
             const itemRef = doc(db, inventoryCollectionPath, id);
             await deleteDoc(itemRef);
             showStatus('删除成功！');
@@ -474,8 +489,8 @@ const App = () => {
     
     // --- UI Helpers ---
     const handleAddItemClick = () => {
-        // 只有非匿名登录的用户才能添加物品
-        if (!user || user.isAnonymous) {
+        // 只有已登录的用户才能添加物品
+        if (!user || !user.uid) {
             showStatus('请先登录才能添加物品', true);
             // 弹出登录模态框
             setShowAuthModal(true);
@@ -492,22 +507,18 @@ const App = () => {
     const filteredInventory = inventory.filter(item => {
         let listToFilter = inventory;
         
-        // 针对 "补货提醒" 标签页的特殊过滤
         if (activeTab === 'restock') {
             listToFilter = itemsToRestock;
         }
 
-        // 搜索过滤 (在当前 listToFilter 上执行)
         const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
         
-        // 类别过滤
         const matchesCategory = activeCategory === '全部' || item.category === activeCategory;
         
-        // 如果在非“补货提醒”页，则应用类别过滤
         if (activeTab !== 'restock') {
             return matchesSearch && matchesCategory;
         } else {
-             // 如果在“补货提醒”页，只需要满足搜索条件，且本身是需补货的
+             // 在“补货提醒”页，只需要满足搜索条件，且本身是需补货的
             return item.currentStock <= item.safetyStock && matchesSearch;
         }
     });
@@ -536,7 +547,9 @@ const App = () => {
                     <h3 className="text-2xl font-bold text-gray-800 mb-2 text-center">
                         数据云同步
                     </h3>
-                    <p className="text-sm text-gray-500 mb-8 text-center">使用 Google 账号一键登录</p>
+                    <p className="text-sm text-gray-500 mb-8 text-center">
+                        首次使用，请通过 Google 账号登录以启用同步。
+                    </p>
                     
                     <button
                         onClick={handleSignIn}
@@ -560,41 +573,33 @@ const App = () => {
         );
     };
 
-    // 物品卡片样式调整 (重点增强可读性)
+    // 物品卡片样式调整
     const ItemCard = ({ item }) => {
         const needsRestock = item.currentStock <= item.safetyStock;
-        // 动态获取图标组件
         const IconComponent = categories[item.category] ? categories[item.category].type : Package;
-        // 只有非匿名用户才算真正登录
-        const isUserLoggedIn = !!user && !user.isAnonymous; 
+        // 只有真正的 Google 用户才能操作
+        const isUserLoggedIn = !!user && !!user.uid; 
 
-        // 优化：卡片背景固定为白色，只用边框/阴影/标签来区分状态
         const cardClass = needsRestock 
-            ? 'border-red-400 shadow-red-200/50' // 红色警示边框和阴影
-            : 'border-gray-200 shadow-gray-200/50'; // 正常边框和阴影
+            ? 'border-red-400 shadow-red-200/50' 
+            : 'border-gray-200 shadow-gray-200/50'; 
         
-        // 标题颜色统一使用深色文本，保证可读性
         const titleColor = 'text-gray-900'; 
-        const restockTagClass = needsRestock ? 'bg-red-600 text-white' : 'bg-green-600 text-white'; // 标签颜色
+        const restockTagClass = needsRestock ? 'bg-red-600 text-white' : 'bg-green-600 text-white'; 
         
-        // 库存数字颜色调整
         const stockTextColor = needsRestock ? 'text-red-700' : 'text-indigo-600'; 
 
         return (
-            // 重点：使用 bg-white, 增加 border, 优化阴影
             <div className={`rounded-3xl shadow-xl p-5 mb-4 transition-all duration-300 transform hover:shadow-2xl 
                            bg-white border-2 ${cardClass}`}>
                 <div className="flex justify-between items-start mb-3">
                     <div className="flex flex-col">
-                        {/* 确保标题是深色文本 */}
                         <h3 className={`text-xl font-bold ${titleColor}`}>{item.name}</h3>
                         <p className="text-sm text-gray-600 flex items-center mt-1">
-                            {/* 动态渲染图标 */}
                             {categories[item.category] || categories['其他']} 
                             <span className="ml-1">{item.category}</span>
                         </p>
                     </div>
-                    {/* 补货状态标签 */}
                     <div className={`text-sm font-medium px-3 py-1 rounded-full flex items-center shadow-md ${restockTagClass}`}>
                         {needsRestock ? (
                              <>
@@ -615,10 +620,8 @@ const App = () => {
                     
                     <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center bg-gray-100 rounded-3xl p-1 shadow-inner">
-                            {/* 减按钮 */}
                             <button 
                                 onClick={() => updateStock(item.id, item.currentStock - 1)}
-                                // 按钮背景使用主色调，确保可见性
                                 className={`p-2 rounded-full transition-colors active:scale-95 
                                     ${!isUserLoggedIn ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-indigo-400 text-white hover:bg-indigo-500 shadow-md'}`}
                                 disabled={!isUserLoggedIn}
@@ -626,12 +629,10 @@ const App = () => {
                                 <Minus className="w-4 h-4" />
                             </button>
                             
-                            {/* 库存显示 - 确保数字颜色对比度高 */}
                             <span className={`px-4 text-xl font-extrabold w-16 text-center ${stockTextColor}`}>
                                 {item.currentStock}
                             </span>
                             
-                            {/* 加按钮 */}
                             <button 
                                 onClick={() => updateStock(item.id, item.currentStock + 1)}
                                 className={`p-2 rounded-full transition-colors active:scale-95 
@@ -642,7 +643,6 @@ const App = () => {
                             </button>
                         </div>
                         
-                        {/* 删除按钮 */}
                         <button 
                             onClick={() => deleteItem(item.id)}
                             className={`p-2 rounded-full transition-colors active:scale-95 
@@ -658,15 +658,14 @@ const App = () => {
         );
     };
     
-    // 渲染主内容区域，根据 activeTab 决定显示什么
+    // 渲染主内容区域
     const renderContent = () => {
         
         if (activeTab === 'settings') {
-            const isGoogleUser = !!user && !user.isAnonymous;
+            const isGoogleUser = !!user && !!user.uid;
             return (
                 <div className="p-4 bg-white rounded-4xl shadow-xl mt-6 border border-gray-200">
                     <h2 className="text-2xl font-bold text-gray-800 mb-4">用户与应用设置</h2>
-                    {/* 桌面端：添加一个返回主页的按钮 */}
                     <button 
                         onClick={() => setActiveTab('home')}
                         className="mb-4 px-4 py-2 text-sm rounded-2xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors shadow-md hidden sm:inline-flex items-center"
@@ -693,8 +692,8 @@ const App = () => {
                                 </>
                             ) : (
                                 <>
-                                    <p className="text-lg font-semibold text-yellow-600">
-                                        {user && user.isAnonymous ? '匿名会话 (请升级)' : '未登录'}
+                                    <p className="text-lg font-semibold text-red-600">
+                                        未登录
                                     </p>
                                     <p className="text-sm text-gray-600">当前无法同步数据，请登录。</p>
                                     {/* 确保在未登录且没有配置错误时显示登录按钮 */}
@@ -721,13 +720,11 @@ const App = () => {
             );
         }
 
-        // 'home' 和 'restock' 视图的主逻辑
         const itemsList = activeTab === 'restock' ? itemsToRestock : filteredInventory;
         const titleText = activeTab === 'restock' ? '🚨 需补货清单' : `${activeCategory} 物品`;
         const itemQuantity = activeTab === 'restock' ? itemsToRestock.length : filteredInventory.length;
         
-        // 检查用户是否已通过 Google 登录
-        const isUserGoogleLoggedIn = !!user && !user.isAnonymous;
+        const isUserGoogleLoggedIn = !!user && !!user.uid;
         
         return (
             <>
@@ -738,10 +735,10 @@ const App = () => {
                         <div className="flex items-center text-red-700 bg-red-100 p-3 rounded-2xl font-bold w-full sm:w-auto mb-3 sm:mb-0 shadow-inner border border-red-200 cursor-pointer"
                              onClick={() => setActiveTab('restock')}>
                             <AlertTriangle className="w-5 h-5 mr-2" />
-                            有 <span className="font-extrabold mx-1">{itemsToStock.length}</span> 个物品库存不足
+                            有 <span className="font-extrabold mx-1">{itemsToRestock.length}</span> 个物品库存不足
                         </div>
                     ) : (
-                        <div className={`flex items-center ${isUserGoogleLoggedIn ? 'text-green-700 bg-green-100 border-green-200' : 'text-yellow-700 bg-yellow-100 border-yellow-200'} p-3 rounded-2xl font-bold w-full sm:w-auto mb-3 sm:mb-0 shadow-inner border`}>
+                        <div className={`flex items-center ${isUserGoogleLoggedIn ? 'text-green-700 bg-green-100 border-green-200' : 'text-red-700 bg-red-100 border-red-200'} p-3 rounded-2xl font-bold w-full sm:w-auto mb-3 sm:mb-0 shadow-inner border`}>
                             {isUserGoogleLoggedIn ? (
                                 <>
                                     <Check className="w-5 h-5 mr-2" />
@@ -750,14 +747,13 @@ const App = () => {
                             ) : (
                                 <>
                                     <AlertTriangle className="w-5 h-5 mr-2" />
-                                    请登录以查看实时同步状态
+                                    请登录以启用云同步功能！
                                 </>
                             )}
                             
                         </div>
                     )}
                     
-                    {/* 桌面端新增的 “添加物品” 按钮 */}
                     <button 
                         onClick={handleAddItemClick}
                         className={`hidden sm:flex items-center px-5 py-2 text-base rounded-3xl font-semibold active:scale-[0.98] transition-all duration-200 shadow-lg 
@@ -783,7 +779,7 @@ const App = () => {
                             />
                         </div>
 
-                        {/* 分类标签页 - 重点修复可见性 */}
+                        {/* 分类标签页 */}
                         <div className="flex flex-wrap gap-2 justify-start">
                             {Object.keys(categories).map(category => (
                                 <button
@@ -791,9 +787,7 @@ const App = () => {
                                     onClick={() => setActiveCategory(category)}
                                     className={`flex items-center px-4 py-2 rounded-3xl text-sm font-semibold transition duration-200 shadow-md 
                                         ${activeCategory === category 
-                                            // 选中状态：使用深色背景 (indigo-600) 和白色文本 (text-white)
                                             ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300/50 transform scale-[1.02] hover:bg-indigo-700' 
-                                            // 未选中状态：使用浅色背景 (gray-200) 和深色文本 (text-gray-700)
                                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                         }`}
                                 >
@@ -806,10 +800,8 @@ const App = () => {
                 )}
 
                 {/* 库存列表 */}
-                {/* 确保标题文本颜色是深色，可读性高 */}
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">{titleText} ({itemQuantity})</h2>
                 
-                {/* 增加底部填充，避免被移动端导航栏遮挡，大屏幕上也增加间距 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-20 sm:pb-10">
                     {itemsList.length > 0 ? (
                         itemsList.map(item => (
@@ -821,7 +813,7 @@ const App = () => {
                                 ? (activeTab === 'restock' 
                                     ? "太棒了！所有物品库存都充足，无需补货。"
                                     : `没有找到 ${activeCategory === '全部' ? '' : `"${activeCategory}"`} 物品。`)
-                                : "请登录以启用云同步功能，并查看您的物品清单。"}
+                                : "请先登录，才能查看和管理您的物品清单。"}
                         </p>
                     )}
                 </div>
@@ -864,7 +856,7 @@ const App = () => {
                         <h1 className="text-3xl font-extrabold cursor-pointer" onClick={() => setActiveTab('home')}>家庭管家</h1>
                         {/* 桌面端/大屏幕的设置/登录按钮 */}
                         <div className="hidden sm:flex items-center space-x-4">
-                            {user && !user.isAnonymous && <span className="text-sm font-medium">你好, {user.displayName || user.email || '用户'}</span>}
+                            {user && <span className="text-sm font-medium">你好, {user.displayName || user.email || '用户'}</span>}
                             <button
                                 onClick={() => setActiveTab('settings')}
                                 className="p-2 rounded-full bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
@@ -872,7 +864,7 @@ const App = () => {
                             >
                                 <Settings className="w-5 h-5"/>
                             </button>
-                            {(user && !user.isAnonymous) ? (
+                            {user ? (
                                 <button 
                                     onClick={handleSignOut}
                                     className="p-2 rounded-full bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
@@ -903,7 +895,7 @@ const App = () => {
                         </div>
                     </div>
                     <p className="text-sm text-indigo-200 mt-1 text-white opacity-70">
-                        {user && !user.isAnonymous ? '您的云端库存管理器' : '请登录以启用云同步'}
+                        {user ? '您的云端库存管理器' : '请登录以启用云同步'}
                     </p>
                 </div>
             </header>
@@ -919,7 +911,6 @@ const App = () => {
                 isOpen={showItemModal} 
                 onClose={() => setShowItemModal(false)}
             >
-                {/* 将表单内容作为子组件传递 */}
                 <ItemForm 
                     newItem={newItem} 
                     setNewItem={setNewItem} 
@@ -928,7 +919,7 @@ const App = () => {
                 />
             </CustomModal>
             
-            {/* 认证模态框 - 简化渲染条件，仅依赖 showAuthModal 状态 */}
+            {/* 认证模态框 - 只有在 isAuthReady 且用户未登录时显示 */}
             <AuthModal 
                 isOpen={showAuthModal && !configError} 
                 handleGoogleSignIn={handleGoogleSignIn}
@@ -952,7 +943,6 @@ const App = () => {
                             onClick={() => setActiveTab(item.id)}
                             className={`flex flex-col items-center p-2 rounded-full transition-colors duration-200 ${
                                 activeTab === item.id 
-                                    // 选中状态：使用主色调
                                     ? 'text-indigo-600 font-bold'
                                     : 'text-gray-500 hover:text-indigo-400'
                             }`}
