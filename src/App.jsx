@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, setDoc, collection, query, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, doc, addDoc, collection, query, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { ShoppingCart, Package, Heart, Leaf, Wrench, Sprout, Soup, Trash2, Plus, Minus, Search, AlertTriangle, X, Check } from 'lucide-react';
 
 // --- Firebase Configuration and Initialization ---
@@ -12,14 +12,23 @@ let auth;
 // 1. 从 Canvas 环境获取全局变量并进行安全检查
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'inventory-default-app';
 let firebaseConfig = null;
+let initializationError = null;
+
 try {
-    firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+    const configString = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+    if (configString) {
+        firebaseConfig = JSON.parse(configString);
+    } else {
+        initializationError = 'Firebase配置缺失。无法初始化。';
+    }
 } catch (e) {
     console.error("Failed to parse __firebase_config:", e);
+    initializationError = `解析配置失败: ${e.message}`;
 }
+
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-if (firebaseConfig) {
+if (firebaseConfig && !initializationError) {
     // 2. 只有在配置可用时才尝试初始化
     try {
         firebaseApp = initializeApp(firebaseConfig);
@@ -27,10 +36,8 @@ if (firebaseConfig) {
         auth = getAuth(firebaseApp);
     } catch (e) {
         console.error("Firebase Initialization Error:", e);
-        // 如果初始化失败，我们将会在组件状态中捕获这个错误
+        initializationError = `Firebase初始化失败: ${e.message}`;
     }
-} else {
-    console.error("Firebase config is missing. Cannot initialize app.");
 }
 
 // 辅助函数：获取用户私有数据的集合路径
@@ -45,7 +52,7 @@ const App = () => {
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
     // 状态中存储初始化错误信息
-    const [error, setError] = useState(firebaseConfig ? null : 'Firebase配置缺失。无法初始化。'); 
+    const [error, setError] = useState(initializationError); 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('全部');
     const [showModal, setShowModal] = useState(false);
@@ -66,9 +73,15 @@ const App = () => {
 
     // --- 认证和 Firestore 启动 ---
     useEffect(() => {
+        // 如果外部配置失败，直接返回
+        if (error) {
+            setLoading(false);
+            return;
+        }
+
         if (!auth || !db) {
-            // 如果初始化失败，设置错误信息并停止加载
-            if (!error) setError('Firebase初始化失败。请检查配置。');
+            // 如果初始化失败（但不是配置缺失），设置错误信息并停止加载
+            if (!error) setError('Firebase 初始化实例失败。');
             setLoading(false);
             return;
         }
@@ -105,7 +118,7 @@ const App = () => {
     // --- 数据获取 (实时监听) ---
     useEffect(() => {
         // 关键：等待认证就绪且获取到 userId 后才开始查询 Firestore
-        if (!isAuthReady || !db || !userId) {
+        if (error || !isAuthReady || !db || !userId) {
             if (isAuthReady && !userId && !error) {
                 setError('用户认证未完成，无法同步数据。');
             }
@@ -143,7 +156,7 @@ const App = () => {
         });
 
         return () => unsubscribe(); // 清理快照监听器
-    }, [isAuthReady, userId]); // 依赖认证状态和 userId
+    }, [isAuthReady, userId, error]); // 依赖认证状态和 userId
 
     // --- CRUD Operations ---
     
@@ -176,10 +189,8 @@ const App = () => {
 
         try {
             const inventoryCollectionPath = getUserCollectionPath(userId, 'inventory');
-            // 使用 addDoc 自动生成文档 ID
-            await doc(collection(db, inventoryCollectionPath), itemToAdd); 
-            // setDoc 也是可以的，但我这里改成 addDoc 语义更清晰 (创建新文档)
-            await setDoc(doc(collection(db, inventoryCollectionPath)), itemToAdd);
+            // 使用 addDoc 自动生成文档 ID，这是创建新文档的推荐方式
+            await addDoc(collection(db, inventoryCollectionPath), itemToAdd); 
 
             setShowModal(false);
             setNewItem({ name: '', safetyStock: 1, currentStock: 0, category: '日用百货' });
@@ -321,7 +332,7 @@ const App = () => {
     // --- Main Render ---
     
     // 显示 Firebase 错误卡片（针对初始化失败）
-    if (error && error.includes('Firebase')) {
+    if (error) {
         return (
             <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
                 <div className="bg-white border-2 border-red-400 rounded-2xl shadow-xl p-8 max-w-lg text-center">
