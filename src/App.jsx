@@ -105,22 +105,21 @@ const App = () => {
     const [statusMessage, setStatusMessage] = useState(null);
     const [activeTab, setActiveTab] = useState('home'); 
 
-    // 分类及其图标 (1. 增加 '猫咪相关' 分类)
+    // 分类及其图标
     const categories = {
         '全部': <Package className="w-5 h-5" />,
         '食品生鲜': <Leaf className="w-5 h-5" />,
         '日用百货': <ShoppingCart className="w-5 h-5" />,
         '个护清洁': <Wrench className="w-5 h-5" />,
         '医疗健康': <Heart className="w-5 h-5" />,
-        '猫咪相关': <Cat className="w-5 h-5" />, // 新增分类
+        '猫咪相关': <Cat className="w-5 h-5" />, 
         '其他': <Sprout className="w-5 h-5" />,
     };
     
-    // 底部导航栏配置
+    // 底部导航栏配置 (移除 'add' tab)
     const navItems = [
         { id: 'home', icon: Home, label: '主页' },
         { id: 'restock', icon: Bell, label: '补货提醒' },
-        { id: 'add', icon: Plus, label: '添加' },
         { id: 'settings', icon: Settings, label: '设置' },
     ];
 
@@ -327,6 +326,18 @@ const App = () => {
             showStatus(`删除失败: ${e.message}`, true, 5000);
         }
     };
+    
+    // --- UI Helpers ---
+    const handleAddItemClick = () => {
+        if (!user) {
+            showStatus('请先登录才能添加物品', true);
+            // 弹出登录模态框
+            setShowAuthModal(true);
+        } else {
+            // 弹出添加物品模态框
+            setShowItemModal(true);
+        }
+    };
 
     // --- Filtering and Display Logic ---
     const itemsToRestock = inventory.filter(item => item.currentStock <= item.safetyStock);
@@ -523,9 +534,6 @@ const App = () => {
     
     // 渲染主内容区域，根据 activeTab 决定显示什么
     const renderContent = () => {
-        // 2. 优化：如果 activeTab 是 'settings' 且用户未登录，导航回 'home' 
-        // 实际上，只要设置了 activeTab，就应该显示对应内容，无需特殊处理未登录状态，
-        // 但需要确保设置页面提供返回主页的路径，而底部导航栏已经提供了。
         
         if (activeTab === 'settings') {
             return (
@@ -594,7 +602,7 @@ const App = () => {
                         <div className="flex items-center text-red-700 bg-red-100 p-3 rounded-2xl font-bold w-full sm:w-auto mb-3 sm:mb-0 shadow-inner border border-red-200 cursor-pointer"
                              onClick={() => setActiveTab('restock')}>
                             <AlertTriangle className="w-5 h-5 mr-2" />
-                            有 <span className="font-extrabold mx-1">{itemsToStock.length}</span> 个物品库存不足
+                            有 <span className="font-extrabold mx-1">{itemsToRestock.length}</span> 个物品库存不足
                         </div>
                     ) : (
                         <div className="flex items-center text-green-700 bg-green-100 p-3 rounded-2xl font-bold w-full sm:w-auto mb-3 sm:mb-0 shadow-inner border border-green-200">
@@ -602,6 +610,15 @@ const App = () => {
                             库存情况良好！
                         </div>
                     )}
+                    
+                    {/* 桌面端新增的 “添加物品” 按钮 */}
+                    <button 
+                        onClick={handleAddItemClick}
+                        className="hidden sm:flex items-center px-5 py-2 text-base rounded-3xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-lg font-semibold active:scale-[0.98]"
+                    >
+                        <Plus className="w-5 h-5 mr-2"/>
+                        添加物品
+                    </button>
                 </div>
 
                 {/* 搜索和分类过滤 (只在 'home' 标签页显示) */}
@@ -749,8 +766,8 @@ const App = () => {
             {/* 添加物品模态框 */}
             <CustomModal 
                 title="添加新物品" 
-                isOpen={showItemModal || activeTab === 'add'} 
-                onClose={() => {setShowItemModal(false); setActiveTab('home');}}
+                isOpen={showItemModal} 
+                onClose={() => setShowItemModal(false)}
             >
                 <form onSubmit={addItem} className="space-y-5">
                     <div>
@@ -823,25 +840,22 @@ const App = () => {
                 handleGoogleSignIn={handleGoogleSignIn}
             />
             
+            {/* 移动端浮动添加按钮 (FAB) - 仅在小屏幕 (< sm) 显示 */}
+            <button
+                onClick={handleAddItemClick}
+                className="sm:hidden fixed bottom-20 right-5 z-30 p-4 rounded-full bg-indigo-600 text-white shadow-2xl hover:bg-indigo-700 transition-all duration-200 active:scale-90"
+                title="添加物品"
+            >
+                <Plus className="w-6 h-6"/>
+            </button>
+            
             {/* 底部导航栏 (Bottom Navigation Bar) - 仅在小屏幕 (< sm) 显示 */}
             <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white shadow-2xl rounded-t-4xl border-t border-gray-200 py-2">
                 <div className="max-w-lg mx-auto flex justify-around">
                     {navItems.map(item => (
                         <button
                             key={item.id}
-                            onClick={() => {
-                                // 修复未登录状态下的导航问题：所有导航都应正常切换 activeTab
-                                if (item.id === 'add') {
-                                    if (!user) {
-                                        showStatus('请先登录才能添加物品', true);
-                                    } else {
-                                        // 弹出模态框，但将 activeTab 设为 'home' 以确保底部导航栏 'home' 按钮不会被激活
-                                        setShowItemModal(true); 
-                                    }
-                                } else {
-                                    setActiveTab(item.id);
-                                }
-                            }}
+                            onClick={() => setActiveTab(item.id)}
                             className={`flex flex-col items-center p-2 rounded-full transition-colors duration-200 ${
                                 activeTab === item.id 
                                     // 选中状态：使用主色调
