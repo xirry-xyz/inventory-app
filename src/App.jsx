@@ -79,13 +79,13 @@ if (firebaseConfig && !initializationError) {
 // 辅助函数：获取用户私有数据的集合路径 (用于 Firestore)
 // 确保只有当 userId 是一个有效的 UID 时，才构建私有路径。
 const getUserCollectionPath = (userId, collectionName) => {
-    // 简单检查 userId 是否为 Canvas 的本地模式或匿名模式。
-    if (userId && (userId.startsWith('anonymous-') || userId === 'LOCAL_USER_MODE')) {
-        // 对于未完全认证的用户，我们仍使用一个路径，但实际数据写入会通过 user 检查来阻止
+    // 只有当 userId 看起来是一个合法的 UID 时，才使用它。
+    // 否则，使用一个安全回退路径（但数据操作会被 user 检查阻止）
+    if (userId && userId !== 'LOCAL_USER_MODE' && !userId.startsWith('anonymous-')) {
         return `artifacts/${appId}/users/${userId}/${collectionName}`;
     }
-    // 对于已登录的用户 (UID)，使用标准路径
-    return `artifacts/${appId}/users/${userId}/${collectionName}`;
+    // 对于本地模式或匿名用户，我们仍使用一个路径，但实际数据写入会通过 user 检查来阻止
+    return `artifacts/${appId}/users/${userId || 'fallback-id'}/${collectionName}`;
 }
 
 
@@ -258,55 +258,55 @@ const App = () => {
         }
         
         const startAuth = async () => {
+            // 优先尝试 Custom Token 认证
             if (initialAuthToken) {
                 try {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } catch (e) {
+                    console.error("Custom Token 认证失败，尝试匿名登录:", e);
+                    // 只有在 Custom Token 失败时，才尝试匿名登录作为后备
                     try {
-                        // 如果 Custom Token 失败，尝试匿名登录作为后备
                         await signInAnonymously(auth);
                     } catch (anonErr) {
-                        setConfigError(`Canvas环境认证失败: ${e.message}。`);
+                        // 如果匿名登录也失败，则设置错误
+                        setConfigError(`Canvas环境认证失败: ${e.message} / ${anonErr.message}`);
                     }
                 }
             } else {
-                 // 尝试匿名登录作为后备
+                 // 如果没有 Custom Token，直接尝试匿名登录
                  try {
                     await signInAnonymously(auth);
                  } catch (e) {
-                    // 如果匿名登录也失败，则设置错误
-                    setConfigError(`Firebase认证失败: ${e.message}。`);
+                    // 如果匿名登录失败，则设置错误
+                    setConfigError(`Firebase认证失败: ${e.message}`);
                  }
             }
         };
 
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             if (currentUser) {
-                // *** 关键修复 1：确保 user 状态被正确设置 ***
+                // *** 关键修复 1：如果存在 currentUser，必须使用其 UID ***
                 setUser(currentUser);
-                setUserId(currentUser.uid); // 使用 UID 作为唯一标识
+                setUserId(currentUser.uid); // 使用真实的 UID
                 setShowAuthModal(false); 
             } else {
                 setUser(null);
-                // *** 关键修复 2：如果未登录，使用匿名 ID 或本地 ID，但明确标识它不是一个真正的同步用户 ***
-                const currentAnonId = auth.currentUser?.uid || crypto.randomUUID();
-                setUserId('anonymous-' + currentAnonId); 
+                // *** 关键修复 2：如果未登录，设置一个无法通过 Firestore 规则的 ID ***
+                // 这样可以确保任何数据写入都会被阻止，直到用户使用 Google 登录
+                setUserId('LOCAL_USER_MODE'); 
                 
                 // 仅在首次加载完成且未登录时，才弹出登录模态框
-                if (!initialAuthToken && isAuthReady) {
+                if (isAuthReady && !initialAuthToken) {
                      setShowAuthModal(true);
                 }
             }
             setIsAuthReady(true);
-            setLoading(false); // 在这里关闭加载状态，确保 UI 尽快渲染
+            setLoading(false); 
         });
 
         if (!isAuthReady) {
             startAuth(); 
-        } else {
-             // 如果已经就绪，但 user 为 null，重新检查是否需要弹出模态框
-             if (!user && !initialAuthToken) setShowAuthModal(true);
-        }
+        } 
         
         return () => unsubscribe();
     }, [configError, isAuthReady]); 
@@ -321,10 +321,12 @@ const App = () => {
         const provider = new GoogleAuthProvider();
         try {
             await signInWithPopup(auth, provider);
-            // onAuthStateChanged 会处理状态更新
+            // onAuthStateChanged 会处理状态更新，并将 userId 设置为 user.uid
             showStatus('Google 登录成功！', false);
         } catch (error) {
-            if (error.code !== 'auth/popup-closed-by-user') {
+            if (error.code === 'auth/unauthorized-domain') {
+                 showStatus('Google 登录失败: Firebase: Error (auth/unauthorized-domain). 请确保已在 Firebase 控制台的 Auth > Settings > Authorized domains 中添加此域名。', true, 10000);
+            } else if (error.code !== 'auth/popup-closed-by-user') {
                 showStatus(`Google 登录失败: ${error.message}`, true, 5000);
             }
         }
@@ -343,14 +345,16 @@ const App = () => {
     
     // --- 数据获取 (实时监听) ---
     useEffect(() => {
-        // 只有当认证就绪且有 userId (且不是匿名的本地模式) 且 db 存在时才进行数据操作
-        if (configError || !isAuthReady || !db || !user || !userId) {
+        // 只有当认证就绪且有 user (即已登录，无论通过 Google 还是其他方式) 且 db 存在时才进行数据操作
+        // 注意：userId 必须是 user.uid，我们不能信任 LOCAL_USER_MODE
+        if (configError || !isAuthReady || !db || !user || !user.uid) {
             setInventory([]);
-            // setLoading(false); // 已经在 onAuthStateChanged 中处理
             return;
         }
-
-        const inventoryCollectionPath = getUserCollectionPath(userId, 'inventory');
+        
+        // 确保使用真正的 UID 来构建路径
+        const actualUserId = user.uid;
+        const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
         const q = query(collection(db, inventoryCollectionPath));
 
         setLoading(true);
@@ -377,12 +381,18 @@ const App = () => {
             setLoading(false);
         }, (err) => {
             // Firestore 权限错误或网络错误
-            setConfigError(`数据同步错误: ${err.message}。请检查Firestore规则。`);
+            // 注意：当用户登录但没有写入权限时，这里会触发
+            if (err.code === 'permission-denied') {
+                 setConfigError(`数据读取失败: Firestore 权限被拒绝。`);
+            } else {
+                 setConfigError(`数据同步错误: ${err.message}`);
+            }
+           
             setLoading(false);
         });
 
         return () => unsubscribe(); 
-    }, [isAuthReady, user, userId, configError]); // 依赖 user 对象，只有登录后才开始同步
+    }, [isAuthReady, user, db, configError]); // 依赖 user 对象，只有登录后才开始同步
 
     // --- CRUD Operations ---
     // 使用 useCallback 包装 addItem，确保引用稳定
@@ -395,13 +405,15 @@ const App = () => {
             return;
         }
         
-        // *** 关键修复 3：明确检查 user.uid，如果 user 存在，userId 必须是其 UID ***
-        // 只有在 user 存在且其 UID 与 userId 匹配时，才允许写入。
-        if (!user || !user.uid || user.uid !== userId || configError || !db) {
-            console.error("添加物品失败：用户状态不完整或配置有误。", { user, userId, configError });
+        // *** 核心检查：只有在 user 存在且 user.uid 存在时才允许写入 ***
+        if (!user || !user.uid || configError || !db) {
+            console.error("添加物品失败：用户状态不完整或配置有误。", { user, configError });
             showStatus('错误：请先登录才能添加和同步数据。', true, 4000);
             return;
         }
+        
+        // 使用真正的 UID 来构建路径
+        const actualUserId = user.uid;
 
         const itemToAdd = {
             ...newItem,
@@ -414,7 +426,7 @@ const App = () => {
         };
 
         try {
-            const inventoryCollectionPath = getUserCollectionPath(userId, 'inventory');
+            const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
             await addDoc(collection(db, inventoryCollectionPath), itemToAdd); 
 
             setShowItemModal(false);
@@ -423,17 +435,18 @@ const App = () => {
         } catch (e) {
             showStatus(`添加失败: ${e.message}`, true, 5000);
         }
-    }, [newItem, user, configError, userId, showStatus]); // 依赖 newItem, user 等
+    }, [newItem, user, configError, showStatus]); 
 
     const updateStock = async (id, newStock) => {
-         // *** 关键修复 4：数据操作前都检查 user.uid 完整性 ***
-         if (!user || !user.uid || user.uid !== userId || configError || !db) {
+         // *** 核心检查 ***
+         if (!user || !user.uid || configError || !db) {
             showStatus('错误：请先登录才能修改数据。', true, 4000);
             return;
         }
+        const actualUserId = user.uid;
 
         try {
-            const inventoryCollectionPath = getUserCollectionPath(userId, 'inventory');
+            const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
             const itemRef = doc(db, inventoryCollectionPath, id);
             await updateDoc(itemRef, { 
                 currentStock: Math.max(0, newStock), 
@@ -445,17 +458,18 @@ const App = () => {
     };
 
     const deleteItem = async (id) => {
-         // *** 关键修复 5：数据操作前都检查 user.uid 完整性 ***
-         if (!user || !user.uid || user.uid !== userId || configError || !db) {
+         // *** 核心检查 ***
+         if (!user || !user.uid || configError || !db) {
             showStatus('错误：请先登录才能删除数据。', true, 4000);
             return;
         }
+        const actualUserId = user.uid;
         
         // 使用 window.confirm 作为临时替代方案，但应该用自定义模态框
         if (!window.confirm('确定要删除此项目吗？')) return; 
 
         try {
-            const inventoryCollectionPath = getUserCollectionPath(userId, 'inventory');
+            const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
             const itemRef = doc(db, inventoryCollectionPath, id);
             await deleteDoc(itemRef);
             showStatus('删除成功！');
@@ -683,7 +697,7 @@ const App = () => {
                                 </>
                             ) : (
                                 <>
-                                    <p className="text-lg font-semibold text-yellow-600">未登录 (匿名或本地模式)</p>
+                                    <p className="text-lg font-semibold text-yellow-600">未登录 (本地模式)</p>
                                     {/* 确保在未登录且没有配置错误时显示登录按钮 */}
                                     {!configError && (
                                         <button 
