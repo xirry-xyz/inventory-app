@@ -1,11 +1,15 @@
 import React, { useState, useCallback } from 'react';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import {
     Package, Leaf, ShoppingCart, Wrench, Heart, Cat, Sprout,
     AlertTriangle, Check, Search, Home, LogOut, Chrome, Loader, Plus
 } from 'lucide-react';
+// Note: We are keeping Lucide icons for categories for now as they are specific, 
+// but replacing UI icons with MUI icons in Layout.
 
 import { useAuth } from './hooks/useAuth';
 import { useInventory } from './hooks/useInventory';
+import theme from './theme';
 
 import Layout from './components/Layout';
 import CustomModal from './components/CustomModal';
@@ -14,7 +18,12 @@ import ItemForm from './components/ItemForm';
 import ItemCard from './components/ItemCard';
 import StatusMessage from './components/StatusMessage';
 
-// Categories constant (also used in ItemForm, maybe should be shared)
+import {
+    Box, Typography, Grid, Paper, InputBase, IconButton, Button, Chip, Stack, CircularProgress
+} from '@mui/material';
+import { Search as SearchIcon, Add as AddIcon, CheckCircle, Warning, Error as ErrorIcon } from '@mui/icons-material';
+
+// Categories constant
 const categories = {
     '全部': <Package className="w-5 h-5" />,
     '食品生鲜': <Leaf className="w-5 h-5" />,
@@ -124,57 +133,58 @@ const App = () => {
         if (activeTab === 'settings') {
             const isGoogleUser = !!user && !!user.uid;
             return (
-                <div className="p-4 bg-white rounded-4xl shadow-xl mt-6 border border-gray-200">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4">用户与应用设置</h2>
-                    <button
+                <Paper sx={{ p: 4, mt: 4, borderRadius: 4 }}>
+                    <Typography variant="h5" fontWeight="bold" gutterBottom>用户与应用设置</Typography>
+                    <Button
+                        startIcon={<Home />}
                         onClick={() => setActiveTab('home')}
-                        className="mb-4 px-4 py-2 text-sm rounded-2xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors shadow-md hidden sm:inline-flex items-center"
+                        sx={{ mb: 2, display: { xs: 'none', sm: 'inline-flex' } }}
                     >
-                        <Home className="w-4 h-4 inline mr-1" />
                         返回主页
-                    </button>
-                    <div className="space-y-4">
-                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200">
-                            <p className="text-sm font-medium text-gray-700">登录状态</p>
+                    </Button>
+                    <Stack spacing={2}>
+                        <Paper variant="outlined" sx={{ p: 3, bgcolor: 'grey.50' }}>
+                            <Typography variant="subtitle2" color="text.secondary">登录状态</Typography>
                             {isGoogleUser ? (
                                 <>
-                                    <p className="text-lg font-semibold text-green-600">已通过 Google 登录</p>
-                                    <p className="text-sm text-gray-600">用户: {user.email || user.displayName || 'Google 用户'}</p>
-                                    <p className="text-xs text-gray-400 break-words">ID: {userId}</p>
-                                    <button
+                                    <Typography variant="h6" color="success.main" fontWeight="bold">已通过 Google 登录</Typography>
+                                    <Typography variant="body2" color="text.secondary">用户: {user.email || user.displayName || 'Google 用户'}</Typography>
+                                    <Typography variant="caption" color="text.disabled" sx={{ wordBreak: 'break-all' }}>ID: {userId}</Typography>
+                                    <Button
+                                        variant="contained"
+                                        color="error"
+                                        startIcon={<LogOut size={16} />}
                                         onClick={handleSignOutWrapper}
-                                        className="mt-3 px-4 py-2 text-sm rounded-2xl bg-red-500 text-white hover:bg-red-600 transition-colors shadow-md"
+                                        sx={{ mt: 2 }}
                                     >
-                                        <LogOut className="w-4 h-4 inline mr-1" />
                                         注销
-                                    </button>
+                                    </Button>
                                 </>
                             ) : (
                                 <>
-                                    <p className="text-lg font-semibold text-red-600">
-                                        未登录
-                                    </p>
-                                    <p className="text-sm text-gray-600">当前无法同步数据，请登录。</p>
+                                    <Typography variant="h6" color="error.main" fontWeight="bold">未登录</Typography>
+                                    <Typography variant="body2" color="text.secondary">当前无法同步数据，请登录。</Typography>
                                     {!configError && (
-                                        <button
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<Chrome size={16} />}
                                             onClick={() => setShowAuthModal(true)}
-                                            className="mt-3 flex items-center px-4 py-2 text-sm rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-md font-semibold"
+                                            sx={{ mt: 2 }}
                                         >
-                                            <Chrome className="w-4 h-4 mr-1" />
                                             登录以同步
-                                        </button>
+                                        </Button>
                                     )}
                                 </>
                             )}
-                        </div>
+                        </Paper>
                         {configError && (
-                            <div className="p-4 bg-red-100 rounded-2xl border border-red-400 text-red-700">
-                                <strong className="font-bold">配置错误：</strong>
-                                <span className="block sm:inline">{configError}</span>
-                            </div>
+                            <Paper variant="outlined" sx={{ p: 3, bgcolor: 'error.light', color: 'error.contrastText' }}>
+                                <Typography fontWeight="bold">配置错误：</Typography>
+                                <Typography>{configError}</Typography>
+                            </Paper>
                         )}
-                    </div>
-                </div>
+                    </Stack>
+                </Paper>
             );
         }
 
@@ -186,111 +196,131 @@ const App = () => {
         return (
             <>
                 {/* 快捷操作和补货提醒 */}
-                <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-5 rounded-3xl shadow-lg border border-gray-200">
+                <Paper sx={{ p: 3, mb: 4, borderRadius: 4, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { sm: 'center' }, gap: 2 }}>
 
                     {(itemsToRestock.length > 0 || itemsExpiringSoon.length > 0) && isUserGoogleLoggedIn ? (
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto mb-3 sm:mb-0 cursor-pointer"
-                            onClick={() => setActiveTab('restock')}>
-
+                        <Box
+                            sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, cursor: 'pointer' }}
+                            onClick={() => setActiveTab('restock')}
+                        >
                             {itemsToRestock.length > 0 && (
-                                <div className="flex items-center text-red-700 bg-red-100 p-3 rounded-2xl font-bold shadow-inner border border-red-200">
-                                    <AlertTriangle className="w-5 h-5 mr-2" />
-                                    <span className="font-extrabold mx-1">{itemsToRestock.length}</span> 个缺货
-                                </div>
+                                <Chip
+                                    icon={<Warning />}
+                                    label={`${itemsToRestock.length} 个缺货`}
+                                    color="error"
+                                    variant="soft" // Note: variant="soft" needs custom theme or Joy UI, falling back to standard
+                                    sx={{ bgcolor: 'error.light', color: 'error.dark', fontWeight: 'bold' }}
+                                />
                             )}
 
                             {itemsExpiringSoon.length > 0 && (
-                                <div className="flex items-center text-yellow-700 bg-yellow-100 p-3 rounded-2xl font-bold shadow-inner border border-yellow-200">
-                                    <AlertTriangle className="w-5 h-5 mr-2" />
-                                    <span className="font-extrabold mx-1">{itemsExpiringSoon.length}</span> 个即将过期
-                                </div>
+                                <Chip
+                                    icon={<Warning />}
+                                    label={`${itemsExpiringSoon.length} 个即将过期`}
+                                    color="warning"
+                                    sx={{ bgcolor: 'warning.light', color: 'warning.dark', fontWeight: 'bold' }}
+                                />
                             )}
-                        </div>
+                        </Box>
                     ) : (
-                        <div className={`flex items-center ${isUserGoogleLoggedIn ? 'text-green-700 bg-green-100 border-green-200' : 'text-red-700 bg-red-100 border-red-200'} p-3 rounded-2xl font-bold w-full sm:w-auto mb-3 sm:mb-0 shadow-inner border`}>
-                            {isUserGoogleLoggedIn ? (
-                                <>
-                                    <Check className="w-5 h-5 mr-2" />
-                                    库存情况良好！
-                                </>
-                            ) : (
-                                <>
-                                    <AlertTriangle className="w-5 h-5 mr-2" />
-                                    请登录以启用云同步功能！
-                                </>
-                            )}
-                        </div>
+                        <Chip
+                            icon={isUserGoogleLoggedIn ? <CheckCircle /> : <ErrorIcon />}
+                            label={isUserGoogleLoggedIn ? "库存情况良好！" : "请登录以启用云同步功能！"}
+                            color={isUserGoogleLoggedIn ? "success" : "error"}
+                            sx={{
+                                bgcolor: isUserGoogleLoggedIn ? 'success.light' : 'error.light',
+                                color: isUserGoogleLoggedIn ? 'success.dark' : 'error.dark',
+                                fontWeight: 'bold',
+                                py: 2
+                            }}
+                        />
                     )}
 
-                    <button
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
                         onClick={handleAddItemClick}
-                        className={`hidden sm:flex items-center px-5 py-2 text-base rounded-3xl font-semibold active:scale-[0.98] transition-all duration-200 shadow-lg 
-                            ${isUserGoogleLoggedIn ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}`}
                         disabled={!isUserGoogleLoggedIn}
+                        sx={{ display: { xs: 'none', sm: 'flex' } }}
                     >
-                        <Plus className="w-5 h-5 mr-2" />
                         添加物品
-                    </button>
-                </div>
+                    </Button>
+                </Paper>
 
                 {/* 搜索和分类过滤 (只在 'home' 标签页显示) */}
                 {activeTab !== 'restock' && (
-                    <div className="mb-8 bg-white p-5 rounded-4xl shadow-xl border border-gray-100">
-                        <div className="relative mb-6">
-                            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <input
-                                type="text"
+                    <Paper sx={{ p: 3, mb: 4, borderRadius: 4 }}>
+                        <Box sx={{ position: 'relative', mb: 3 }}>
+                            <Box sx={{ position: 'absolute', top: 12, left: 12, color: 'text.secondary' }}>
+                                <SearchIcon />
+                            </Box>
+                            <InputBase
                                 placeholder="🔍 搜索物品名称..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-indigo-600 focus:border-indigo-600 transition duration-150 text-lg font-medium text-gray-800"
+                                sx={{
+                                    width: '100%',
+                                    pl: 6, pr: 2, py: 1,
+                                    border: 1, borderColor: 'divider', borderRadius: 3,
+                                    '&:focus-within': { borderColor: 'primary.main', borderWidth: 2 }
+                                }}
                             />
-                        </div>
+                        </Box>
 
                         {/* 分类标签页 */}
-                        <div className="flex flex-wrap gap-2 justify-start">
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ gap: 1 }}>
                             {Object.keys(categories).map(category => (
-                                <button
+                                <Chip
                                     key={category}
+                                    label={category}
+                                    icon={React.cloneElement(categories[category], { className: "w-4 h-4" })}
                                     onClick={() => setActiveCategory(category)}
-                                    className={`flex items-center px-4 py-2 rounded-3xl text-sm font-semibold transition duration-200 shadow-md 
-                                        ${activeCategory === category
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300/50 transform scale-[1.02] hover:bg-indigo-700'
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                        }`}
-                                >
-                                    {categories[category]}
-                                    <span className="ml-2">{category}</span>
-                                </button>
+                                    color={activeCategory === category ? "primary" : "default"}
+                                    variant={activeCategory === category ? "filled" : "outlined"}
+                                    clickable
+                                    sx={{
+                                        borderRadius: 4,
+                                        px: 1,
+                                        py: 2.5,
+                                        '& .MuiChip-icon': { ml: 1 }
+                                    }}
+                                />
                             ))}
-                        </div>
-                    </div>
+                        </Stack>
+                    </Paper>
                 )}
 
                 {/* 库存列表 */}
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">{titleText} ({itemQuantity})</h2>
+                <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mb: 2 }}>
+                    {titleText} ({itemQuantity})
+                </Typography>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-20 sm:pb-10">
+                <Grid container spacing={3} pb={10}>
                     {itemsList.length > 0 ? (
                         itemsList.map(item => (
-                            <ItemCard
-                                key={item.id}
-                                item={item}
-                                updateStock={updateStockWrapper}
-                                deleteItem={deleteItemWrapper}
-                                user={user}
-                            />
+                            <Grid item xs={12} sm={6} lg={4} key={item.id}>
+                                <ItemCard
+                                    item={item}
+                                    updateStock={updateStockWrapper}
+                                    deleteItem={deleteItemWrapper}
+                                    user={user}
+                                />
+                            </Grid>
                         ))
                     ) : (
-                        <p className="col-span-full text-center text-gray-500 p-10 bg-white rounded-3xl shadow-inner border border-gray-200">
-                            {isUserGoogleLoggedIn
-                                ? (activeTab === 'restock'
-                                    ? "太棒了！所有物品库存都充足，且没有即将过期的物品。"
-                                    : `没有找到 ${activeCategory === '全部' ? '' : `"${activeCategory}"`} 物品。`)
-                                : "请先登录，才能查看和管理您的物品清单。"}
-                        </p>
+                        <Grid item xs={12}>
+                            <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 4, bgcolor: 'background.default' }} variant="outlined">
+                                <Typography color="text.secondary">
+                                    {isUserGoogleLoggedIn
+                                        ? (activeTab === 'restock'
+                                            ? "太棒了！所有物品库存都充足，且没有即将过期的物品。"
+                                            : `没有找到 ${activeCategory === '全部' ? '' : `"${activeCategory}"`} 物品。`)
+                                        : "请先登录，才能查看和管理您的物品清单。"}
+                                </Typography>
+                            </Paper>
+                        </Grid>
                     )}
-                </div>
+                </Grid>
             </>
         );
     };
@@ -298,48 +328,49 @@ const App = () => {
     // Loading State
     if (loading || !isAuthReady) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                    <Loader className="h-8 w-8 text-indigo-600 mx-auto animate-spin" />
-                    <p className="mt-2 text-gray-600">正在等待认证和数据同步...</p>
-                </div>
-            </div>
+            <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default' }}>
+                <CircularProgress size={40} />
+                <Typography sx={{ mt: 2, color: 'text.secondary' }}>正在等待认证和数据同步...</Typography>
+            </Box>
         );
     }
 
     return (
-        <Layout
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            user={user}
-            handleSignOut={handleSignOutWrapper}
-            setShowAuthModal={setShowAuthModal}
-            handleAddItemClick={handleAddItemClick}
-        >
-            <StatusMessage statusMessage={statusMessage} />
-
-            {renderContent()}
-
-            <CustomModal
-                title="添加新物品"
-                isOpen={showItemModal}
-                onClose={() => setShowItemModal(false)}
+        <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Layout
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                user={user}
+                handleSignOut={handleSignOutWrapper}
+                setShowAuthModal={setShowAuthModal}
+                handleAddItemClick={handleAddItemClick}
             >
-                <ItemForm
-                    newItem={newItem}
-                    setNewItem={setNewItem}
-                    addItem={handleAddItem}
-                    user={user}
+                <StatusMessage statusMessage={statusMessage} />
+
+                {renderContent()}
+
+                <CustomModal
+                    title="添加新物品"
+                    isOpen={showItemModal}
+                    onClose={() => setShowItemModal(false)}
+                >
+                    <ItemForm
+                        newItem={newItem}
+                        setNewItem={setNewItem}
+                        addItem={handleAddItem}
+                        user={user}
+                        showStatus={showStatus}
+                    />
+                </CustomModal>
+
+                <AuthModal
+                    isOpen={showAuthModal && !configError}
+                    handleGoogleSignIn={handleGoogleSignInWrapper}
                     showStatus={showStatus}
                 />
-            </CustomModal>
-
-            <AuthModal
-                isOpen={showAuthModal && !configError}
-                handleGoogleSignIn={handleGoogleSignInWrapper}
-                showStatus={showStatus}
-            />
-        </Layout>
+            </Layout>
+        </ThemeProvider>
     );
 };
 

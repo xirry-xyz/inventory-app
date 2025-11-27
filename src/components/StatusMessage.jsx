@@ -1,15 +1,22 @@
 import React from 'react';
+import { Snackbar, Alert } from '@mui/material';
 
 const StatusMessage = ({ statusMessage }) => {
     if (!statusMessage) return null;
 
     return (
-        <div
-            className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-5 py-3 rounded-full shadow-lg z-50 transition-opacity duration-300
-            ${statusMessage.isError ? 'bg-red-500' : 'bg-green-500'} text-white font-semibold`}
+        <Snackbar
+            open={!!statusMessage}
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         >
-            {statusMessage.message}
-        </div>
+            <Alert
+                severity={statusMessage.isError ? 'error' : 'success'}
+                variant="filled"
+                sx={{ width: '100%', borderRadius: 4, boxShadow: 3 }}
+            >
+                {statusMessage.message}
+            </Alert>
+        </Snackbar>
     );
 };
 

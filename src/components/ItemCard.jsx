@@ -1,7 +1,12 @@
 import React from 'react';
 import {
-    ShoppingCart, Package, Heart, Leaf, Wrench, Sprout, Cat,
-    AlertTriangle, Check, Minus, Plus, Trash2, Calendar, Clock
+    Card, CardContent, CardActions, Typography, Button, IconButton, Box, Chip, Stack
+} from '@mui/material';
+import {
+    Add, Remove, Delete, Warning, CheckCircle, EventBusy, Schedule, CalendarToday
+} from '@mui/icons-material';
+import {
+    ShoppingCart, Package, Heart, Leaf, Wrench, Sprout, Cat
 } from 'lucide-react';
 
 const categories = {
@@ -39,102 +44,132 @@ const ItemCard = ({ item, updateStock, deleteItem, user }) => {
     }
 
     // Card Styling based on status
-    let cardBorderClass = 'border-gray-200 shadow-gray-200/50';
+    let cardBgColor = 'background.paper';
+    let cardBorderColor = 'transparent';
+
     if (expirationStatus === 'expired') {
-        cardBorderClass = 'border-red-500 shadow-red-200/50 bg-red-50';
+        cardBgColor = '#FEF2F2'; // Red 50
+        cardBorderColor = 'error.main';
     } else if (expirationStatus === 'warning') {
-        cardBorderClass = 'border-yellow-400 shadow-yellow-200/50 bg-yellow-50';
+        cardBgColor = '#FFFBEB'; // Amber 50
+        cardBorderColor = 'warning.main';
     } else if (needsRestock) {
-        cardBorderClass = 'border-orange-400 shadow-orange-200/50';
+        cardBorderColor = 'warning.main';
     }
 
-    const restockTagClass = needsRestock ? 'bg-orange-600 text-white' : 'bg-green-600 text-white';
-    const stockTextColor = needsRestock ? 'text-orange-700' : 'text-indigo-600';
-
     return (
-        <div className={`rounded-3xl shadow-xl p-5 mb-4 transition-all duration-300 transform hover:shadow-2xl 
-                       bg-white border-2 ${cardBorderClass}`}>
-            <div className="flex justify-between items-start mb-3">
-                <div className="flex flex-col">
-                    <h3 className="text-xl font-bold text-gray-900">{item.name}</h3>
-                    <p className="text-sm text-gray-600 flex items-center mt-1">
-                        {categories[item.category] || categories['其他']}
-                        <span className="ml-1">{item.category}</span>
-                    </p>
-                </div>
-                <div className={`text-sm font-medium px-3 py-1 rounded-full flex items-center shadow-md ${restockTagClass}`}>
-                    {needsRestock ? (
-                        <>
-                            <AlertTriangle className="w-4 h-4 mr-1" />
-                            需补货
-                        </>
-                    ) : (
-                        <>
-                            <Check className="w-4 h-4 mr-1" />
-                            充足
-                        </>
-                    )}
-                </div>
-            </div>
+        <Card
+            variant="outlined"
+            sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                bgcolor: cardBgColor,
+                borderColor: cardBorderColor !== 'transparent' ? cardBorderColor : undefined,
+                borderWidth: cardBorderColor !== 'transparent' ? 2 : 1,
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 4
+                }
+            }}
+        >
+            <CardContent sx={{ flexGrow: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Box>
+                        <Typography variant="h6" component="div" fontWeight="bold">
+                            {item.name}
+                        </Typography>
+                        <Stack direction="row" alignItems="center" spacing={0.5} mt={0.5}>
+                            <Box sx={{ color: 'text.secondary', display: 'flex' }}>
+                                {categories[item.category] || categories['其他']}
+                            </Box>
+                            <Typography variant="body2" color="text.secondary">
+                                {item.category}
+                            </Typography>
+                        </Stack>
+                    </Box>
+                    <Chip
+                        icon={needsRestock ? <Warning /> : <CheckCircle />}
+                        label={needsRestock ? "需补货" : "充足"}
+                        color={needsRestock ? "warning" : "success"}
+                        size="small"
+                        sx={{ fontWeight: 'bold' }}
+                    />
+                </Box>
 
-            {/* Expiration Info */}
-            {item.expirationDate && (
-                <div className={`mb-3 p-2 rounded-xl text-sm font-medium flex items-center
-                    ${expirationStatus === 'expired' ? 'bg-red-100 text-red-700' :
-                        expirationStatus === 'warning' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-green-50 text-green-700'}`}>
-                    {expirationStatus === 'expired' ? <AlertTriangle className="w-4 h-4 mr-2" /> :
-                        expirationStatus === 'warning' ? <Clock className="w-4 h-4 mr-2" /> :
-                            <Calendar className="w-4 h-4 mr-2" />}
-
-                    <span>
-                        {expirationStatus === 'expired' ? `已过期 ${Math.abs(daysRemaining)} 天` :
-                            expirationStatus === 'warning' ? `${daysRemaining} 天后过期` :
-                                `有效期至 ${item.expirationDate}`}
-                    </span>
-                </div>
-            )}
-
-            <div className="mt-4 border-t border-gray-100 pt-3">
-                <p className="text-sm text-gray-500 font-medium">安全库存: {item.safetyStock} {item.unit || '份'}</p>
-
-                <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center bg-gray-100 rounded-3xl p-1 shadow-inner">
-                        <button
-                            onClick={() => updateStock(item.id, item.currentStock - 1)}
-                            className={`p-2 rounded-full transition-colors active:scale-95 
-                                ${!isUserLoggedIn ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-indigo-400 text-white hover:bg-indigo-500 shadow-md'}`}
-                            disabled={!isUserLoggedIn}
-                        >
-                            <Minus className="w-4 h-4" />
-                        </button>
-
-                        <span className={`px-4 text-xl font-extrabold w-16 text-center ${stockTextColor}`}>
-                            {item.currentStock}
-                        </span>
-
-                        <button
-                            onClick={() => updateStock(item.id, item.currentStock + 1)}
-                            className={`p-2 rounded-full transition-colors active:scale-95 
-                                ${!isUserLoggedIn ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-indigo-400 text-white hover:bg-indigo-500 shadow-md'}`}
-                            disabled={!isUserLoggedIn}
-                        >
-                            <Plus className="w-4 h-4" />
-                        </button>
-                    </div>
-
-                    <button
-                        onClick={() => deleteItem(item.id)}
-                        className={`p-2 rounded-full transition-colors active:scale-95 
-                            ${!isUserLoggedIn ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'text-red-700 hover:text-white bg-red-100 hover:bg-red-600 shadow-md'}`}
-                        title="删除"
-                        disabled={!isUserLoggedIn}
+                {/* Expiration Info */}
+                {item.expirationDate && (
+                    <Box
+                        sx={{
+                            mb: 2, p: 1, borderRadius: 2,
+                            bgcolor: 'rgba(255,255,255,0.6)',
+                            display: 'flex', alignItems: 'center', gap: 1,
+                            color: expirationStatus === 'expired' ? 'error.main' :
+                                expirationStatus === 'warning' ? 'warning.dark' : 'success.dark'
+                        }}
                     >
-                        <Trash2 className="w-5 h-5" />
-                    </button>
-                </div>
-            </div>
-        </div>
+                        {expirationStatus === 'expired' ? <EventBusy fontSize="small" /> :
+                            expirationStatus === 'warning' ? <Schedule fontSize="small" /> :
+                                <CalendarToday fontSize="small" />}
+
+                        <Typography variant="body2" fontWeight="medium">
+                            {expirationStatus === 'expired' ? `已过期 ${Math.abs(daysRemaining)} 天` :
+                                expirationStatus === 'warning' ? `${daysRemaining} 天后过期` :
+                                    `有效期至 ${item.expirationDate}`}
+                        </Typography>
+                    </Box>
+                )}
+
+                <Typography variant="body2" color="text.secondary">
+                    安全库存: {item.safetyStock} {item.unit || '份'}
+                </Typography>
+            </CardContent>
+
+            <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: 'action.hover', borderRadius: 8, p: 0.5 }}>
+                    <IconButton
+                        size="small"
+                        onClick={() => updateStock(item.id, item.currentStock - 1)}
+                        disabled={!isUserLoggedIn}
+                        color="primary"
+                    >
+                        <Remove fontSize="small" />
+                    </IconButton>
+
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            mx: 2,
+                            minWidth: 24,
+                            textAlign: 'center',
+                            color: needsRestock ? 'warning.main' : 'primary.main',
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        {item.currentStock}
+                    </Typography>
+
+                    <IconButton
+                        size="small"
+                        onClick={() => updateStock(item.id, item.currentStock + 1)}
+                        disabled={!isUserLoggedIn}
+                        color="primary"
+                    >
+                        <Add fontSize="small" />
+                    </IconButton>
+                </Box>
+
+                <IconButton
+                    onClick={() => deleteItem(item.id)}
+                    disabled={!isUserLoggedIn}
+                    color="error"
+                    sx={{ bgcolor: 'error.lighter', '&:hover': { bgcolor: 'error.light', color: 'white' } }}
+                >
+                    <Delete />
+                </IconButton>
+            </CardActions>
+        </Card>
     );
 };
 

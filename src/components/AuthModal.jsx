@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Loader, Chrome } from 'lucide-react';
+import { Dialog, DialogContent, Typography, Button, Box, CircularProgress } from '@mui/material';
+import { Google } from '@mui/icons-material';
 
 const AuthModal = ({ isOpen, handleGoogleSignIn, showStatus }) => {
     const [authLoading, setAuthLoading] = useState(false);
@@ -16,34 +17,37 @@ const AuthModal = ({ isOpen, handleGoogleSignIn, showStatus }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-70 z-50 flex justify-center items-center p-4">
-            <div className="bg-white rounded-4xl shadow-2xl p-8 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2 text-center">
+        <Dialog
+            open={isOpen}
+            PaperProps={{
+                sx: { borderRadius: 4, maxWidth: 400, width: '100%', p: 2 }
+            }}
+        >
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
                     数据云同步
-                </h3>
-                <p className="text-sm text-gray-500 mb-8 text-center">
+                </Typography>
+                <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 4 }}>
                     首次使用，请通过 Google 账号登录以启用同步。
-                </p>
+                </Typography>
 
-                <button
+                <Button
+                    fullWidth
+                    variant="contained"
+                    size="large"
                     onClick={handleSignIn}
-                    className={`w-full py-3 rounded-3xl font-semibold flex justify-center items-center space-x-2 transition duration-200 shadow-xl 
-                        ${authLoading ? 'bg-indigo-300' : 'bg-indigo-600 hover:bg-indigo-700'} text-white`}
                     disabled={authLoading}
+                    startIcon={authLoading ? <CircularProgress size={20} color="inherit" /> : <Google />}
+                    sx={{ height: 56, mb: 3 }}
                 >
-                    {authLoading ? (
-                        <Loader className="w-5 h-5 animate-spin" />
-                    ) : (
-                        <Chrome className="w-5 h-5" />
-                    )}
-                    <span>{authLoading ? '正在登录...' : '使用 Google 账号登录'}</span>
-                </button>
+                    {authLoading ? '正在登录...' : '使用 Google 账号登录'}
+                </Button>
 
-                <p className="text-xs text-gray-400 mt-6 text-center">
+                <Typography variant="caption" color="text.disabled" align="center">
                     请确保已在 Firebase 控制台启用 Google 登录。
-                </p>
-            </div>
-        </div>
+                </Typography>
+            </DialogContent>
+        </Dialog>
     );
 };
 
