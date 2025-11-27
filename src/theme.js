@@ -4,34 +4,42 @@ const theme = createTheme({
     palette: {
         mode: 'light',
         primary: {
-            main: '#4F46E5', // Indigo 600
-            light: '#6366F1',
-            dark: '#4338CA',
+            main: '#111827', // Dark Navy/Black (Gray 900)
+            light: '#374151', // Gray 700
+            dark: '#000000',
+            contrastText: '#FFFFFF',
         },
         secondary: {
-            main: '#DB2777', // Pink 600
-            light: '#EC4899',
-            dark: '#BE185D',
+            main: '#6B7280', // Gray 500
+            light: '#9CA3AF',
+            dark: '#4B5563',
+            contrastText: '#FFFFFF',
         },
         background: {
-            default: '#F3F4F6', // Gray 100
+            default: '#F9FAFB', // Gray 50
             paper: '#FFFFFF',
         },
+        text: {
+            primary: '#111827', // Gray 900
+            secondary: '#6B7280', // Gray 500
+        },
+        divider: '#E5E7EB', // Gray 200
         error: {
-            main: '#EF4444', // Red 500
+            main: '#EF4444',
         },
         warning: {
-            main: '#F59E0B', // Amber 500
+            main: '#F59E0B',
         },
         success: {
-            main: '#10B981', // Emerald 500
+            main: '#10B981',
         },
         info: {
-            main: '#3B82F6', // Blue 500
+            main: '#3B82F6',
         },
     },
     typography: {
         fontFamily: [
+            'Inter',
             '-apple-system',
             'BlinkMacSystemFont',
             '"Segoe UI"',
@@ -39,48 +47,55 @@ const theme = createTheme({
             '"Helvetica Neue"',
             'Arial',
             'sans-serif',
-            '"Apple Color Emoji"',
-            '"Segoe UI Emoji"',
-            '"Segoe UI Symbol"',
         ].join(','),
-        h1: {
-            fontWeight: 700,
-        },
-        h2: {
-            fontWeight: 700,
-        },
-        h3: {
-            fontWeight: 600,
-        },
+        h1: { fontWeight: 700, letterSpacing: '-0.025em' },
+        h2: { fontWeight: 700, letterSpacing: '-0.025em' },
+        h3: { fontWeight: 600, letterSpacing: '-0.025em' },
+        h4: { fontWeight: 600, letterSpacing: '-0.025em' },
+        h5: { fontWeight: 600 },
+        h6: { fontWeight: 600 },
         button: {
-            textTransform: 'none', // Material 3 often uses sentence case or no transform
-            fontWeight: 600,
+            textTransform: 'none',
+            fontWeight: 500,
         },
     },
     shape: {
-        borderRadius: 16, // More rounded corners for Material 3 feel
+        borderRadius: 8, // Standard rounded corners for SaaS look
     },
     components: {
         MuiButton: {
             styleOverrides: {
                 root: {
-                    borderRadius: 24, // Pill-shaped buttons
-                    padding: '8px 24px',
+                    borderRadius: 6,
+                    boxShadow: 'none',
+                    '&:hover': {
+                        boxShadow: 'none',
+                    },
+                },
+                containedPrimary: {
+                    backgroundColor: '#111827',
+                    '&:hover': {
+                        backgroundColor: '#1F2937',
+                    },
                 },
             },
         },
         MuiCard: {
             styleOverrides: {
                 root: {
-                    borderRadius: 24,
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)', // Soft shadow
+                    borderRadius: 12,
+                    border: '1px solid #E5E7EB', // Subtle border
+                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', // Very subtle shadow
                 },
             },
         },
         MuiPaper: {
             styleOverrides: {
+                root: {
+                    backgroundImage: 'none',
+                },
                 rounded: {
-                    borderRadius: 24,
+                    borderRadius: 12,
                 },
             },
         },
@@ -88,8 +103,37 @@ const theme = createTheme({
             styleOverrides: {
                 root: {
                     '& .MuiOutlinedInput-root': {
-                        borderRadius: 12,
+                        borderRadius: 6,
+                        backgroundColor: '#FFFFFF',
+                        '& fieldset': {
+                            borderColor: '#D1D5DB', // Gray 300
+                        },
+                        '&:hover fieldset': {
+                            borderColor: '#9CA3AF', // Gray 400
+                        },
+                        '&.Mui-focused fieldset': {
+                            borderColor: '#111827', // Primary
+                            borderWidth: 1,
+                        },
                     },
+                },
+            },
+        },
+        MuiAppBar: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: '#FFFFFF',
+                    color: '#111827',
+                    borderBottom: '1px solid #E5E7EB',
+                    boxShadow: 'none',
+                },
+            },
+        },
+        MuiChip: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 6,
+                    fontWeight: 500,
                 },
             },
         },

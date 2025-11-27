@@ -1,8 +1,7 @@
 import React, { memo } from 'react';
 import {
-    TextField, Button, FormControl, InputLabel, Select, MenuItem, Grid, Box
+    TextField, Button, FormControl, InputLabel, Select, MenuItem, Grid, Box, Typography
 } from '@mui/material';
-import { Save } from '@mui/icons-material';
 
 const categories = [
     '食品生鲜',
@@ -33,7 +32,10 @@ const ItemForm = memo(({ newItem, setNewItem, addItem, user, showStatus }) => {
 
     return (
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <Grid container spacing={3}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                基本信息
+            </Typography>
+            <Grid container spacing={2} sx={{ mb: 3 }}>
                 <Grid item xs={12}>
                     <TextField
                         fullWidth
@@ -42,11 +44,12 @@ const ItemForm = memo(({ newItem, setNewItem, addItem, user, showStatus }) => {
                         value={newItem.name}
                         onChange={handleInputChange}
                         required
-                        variant="outlined"
+                        size="small"
+                        placeholder="例如：洗手液"
                     />
                 </Grid>
                 <Grid item xs={12}>
-                    <FormControl fullWidth required>
+                    <FormControl fullWidth required size="small">
                         <InputLabel>分类</InputLabel>
                         <Select
                             name="category"
@@ -60,6 +63,12 @@ const ItemForm = memo(({ newItem, setNewItem, addItem, user, showStatus }) => {
                         </Select>
                     </FormControl>
                 </Grid>
+            </Grid>
+
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                库存设置
+            </Typography>
+            <Grid container spacing={2} sx={{ mb: 3 }}>
                 <Grid item xs={6}>
                     <TextField
                         fullWidth
@@ -69,6 +78,7 @@ const ItemForm = memo(({ newItem, setNewItem, addItem, user, showStatus }) => {
                         value={newItem.currentStock}
                         onChange={handleInputChange}
                         required
+                        size="small"
                         inputProps={{ min: 0 }}
                     />
                 </Grid>
@@ -81,6 +91,7 @@ const ItemForm = memo(({ newItem, setNewItem, addItem, user, showStatus }) => {
                         value={newItem.safetyStock}
                         onChange={handleInputChange}
                         required
+                        size="small"
                         inputProps={{ min: 1 }}
                     />
                 </Grid>
@@ -92,23 +103,22 @@ const ItemForm = memo(({ newItem, setNewItem, addItem, user, showStatus }) => {
                         type="date"
                         value={newItem.expirationDate || ''}
                         onChange={handleInputChange}
+                        size="small"
                         InputLabelProps={{ shrink: true }}
                     />
                 </Grid>
-                <Grid item xs={12}>
-                    <Button
-                        type="submit"
-                        fullWidth
-                        variant="contained"
-                        size="large"
-                        disabled={!isLoggedIn}
-                        startIcon={<Save />}
-                        sx={{ mt: 2, height: 56 }}
-                    >
-                        {isLoggedIn ? '保存物品' : '请先登录'}
-                    </Button>
-                </Grid>
             </Grid>
+
+            <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                disableElevation
+                disabled={!isLoggedIn}
+                sx={{ height: 40 }}
+            >
+                {isLoggedIn ? '保存物品' : '请先登录'}
+            </Button>
         </Box>
     );
 });

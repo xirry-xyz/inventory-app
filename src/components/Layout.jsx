@@ -1,7 +1,7 @@
 import React from 'react';
 import {
     AppBar, Toolbar, Typography, IconButton, Box, Container,
-    BottomNavigation, BottomNavigationAction, Fab, useMediaQuery, useTheme, Button
+    BottomNavigation, BottomNavigationAction, Fab, useMediaQuery, useTheme, Button, Stack
 } from '@mui/material';
 import {
     Home, Notifications, Settings, Logout, Login, Add
@@ -21,83 +21,76 @@ const Layout = ({
 
     const navItems = [
         { id: 'home', icon: <Home />, label: '主页' },
-        { id: 'restock', icon: <Notifications />, label: '补货/过期' },
+        { id: 'restock', icon: <Notifications />, label: '补货' },
         { id: 'settings', icon: <Settings />, label: '设置' },
     ];
 
     return (
         <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: isMobile ? 10 : 4 }}>
-            {/* 顶部标题栏 */}
-            <AppBar position="static" elevation={0} sx={{ bgcolor: 'primary.main', pb: 4, mb: -4 }}>
-                <Toolbar>
-                    <Typography
-                        variant="h6"
-                        component="div"
-                        sx={{ flexGrow: 1, fontWeight: 'bold', cursor: 'pointer' }}
-                        onClick={() => setActiveTab('home')}
-                    >
-                        家庭用品库存管家
-                    </Typography>
+            {/* Minimalist Header */}
+            <AppBar position="static" color="default" elevation={0}>
+                <Container maxWidth="lg">
+                    <Toolbar disableGutters sx={{ minHeight: 64 }}>
+                        <Typography
+                            variant="h6"
+                            component="div"
+                            sx={{ flexGrow: 1, fontWeight: 800, cursor: 'pointer', letterSpacing: '-0.5px' }}
+                            onClick={() => setActiveTab('home')}
+                        >
+                            inventory<Box component="span" sx={{ color: 'text.secondary', fontWeight: 400 }}>tracker</Box>
+                        </Typography>
 
-                    {/* 桌面端/大屏幕的设置/登录按钮 */}
-                    {!isMobile && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            {user && (
-                                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                                    你好, {user.displayName || user.email || '用户'}
-                                </Typography>
-                            )}
+                        {/* Desktop Nav */}
+                        {!isMobile && (
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                {user ? (
+                                    <>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
+                                            {user.email}
+                                        </Typography>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            onClick={handleSignOut}
+                                            size="small"
+                                            disableElevation
+                                        >
+                                            退出
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        onClick={() => setShowAuthModal(true)}
+                                        size="small"
+                                        disableElevation
+                                    >
+                                        登录
+                                    </Button>
+                                )}
+                            </Stack>
+                        )}
+
+                        {/* Mobile Settings Icon */}
+                        {isMobile && (
                             <IconButton
-                                color="inherit"
                                 onClick={() => setActiveTab('settings')}
-                                title="设置"
+                                size="small"
                             >
                                 <Settings />
                             </IconButton>
-                            {user ? (
-                                <IconButton
-                                    color="inherit"
-                                    onClick={handleSignOut}
-                                    title="注销"
-                                >
-                                    <Logout />
-                                </IconButton>
-                            ) : (
-                                <Button
-                                    color="inherit"
-                                    startIcon={<Login />}
-                                    onClick={() => setShowAuthModal(true)}
-                                    sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
-                                >
-                                    登录
-                                </Button>
-                            )}
-                        </Box>
-                    )}
-
-                    {/* 移动端/小屏幕的设置入口 */}
-                    {isMobile && (
-                        <IconButton
-                            color="inherit"
-                            onClick={() => setActiveTab('settings')}
-                        >
-                            <Settings />
-                        </IconButton>
-                    )}
-                </Toolbar>
-                <Container maxWidth="lg">
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 1 }}>
-                        {user ? '您的云端库存管理器' : '请登录以启用云同步'}
-                    </Typography>
+                        )}
+                    </Toolbar>
                 </Container>
             </AppBar>
 
-            {/* 主内容区域 */}
-            <Container maxWidth="lg" sx={{ mt: 4, position: 'relative', zIndex: 1 }}>
+            {/* Main Content */}
+            <Container maxWidth="lg" sx={{ mt: 4 }}>
                 {children}
             </Container>
 
-            {/* 移动端浮动添加按钮 (FAB) */}
+            {/* Mobile FAB */}
             {isMobile && (
                 <Fab
                     color="primary"
@@ -109,15 +102,16 @@ const Layout = ({
                 </Fab>
             )}
 
-            {/* 底部导航栏 */}
+            {/* Mobile Bottom Nav */}
             {isMobile && (
-                <Box sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000, boxShadow: 3 }}>
+                <Box sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000, borderTop: '1px solid #E5E7EB' }}>
                     <BottomNavigation
                         showLabels
                         value={activeTab}
                         onChange={(event, newValue) => {
                             setActiveTab(newValue);
                         }}
+                        sx={{ bgcolor: 'background.paper' }}
                     >
                         {navItems.map(item => (
                             <BottomNavigationAction

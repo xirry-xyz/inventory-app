@@ -4,8 +4,6 @@ import {
     Package, Leaf, ShoppingCart, Wrench, Heart, Cat, Sprout,
     AlertTriangle, Check, Search, Home, LogOut, Chrome, Loader, Plus
 } from 'lucide-react';
-// Note: We are keeping Lucide icons for categories for now as they are specific, 
-// but replacing UI icons with MUI icons in Layout.
 
 import { useAuth } from './hooks/useAuth';
 import { useInventory } from './hooks/useInventory';
@@ -19,7 +17,7 @@ import ItemCard from './components/ItemCard';
 import StatusMessage from './components/StatusMessage';
 
 import {
-    Box, Typography, Grid, Paper, InputBase, IconButton, Button, Chip, Stack, CircularProgress
+    Box, Typography, Grid, Paper, InputBase, IconButton, Button, Chip, Stack, CircularProgress, Card, CardContent, Divider
 } from '@mui/material';
 import { Search as SearchIcon, Add as AddIcon, CheckCircle, Warning, Error as ErrorIcon } from '@mui/icons-material';
 
@@ -107,7 +105,6 @@ const App = () => {
         let listToFilter = inventory;
 
         if (activeTab === 'restock') {
-            // Combine restock and expiring items for this view
             const needsRestock = item.currentStock <= item.safetyStock;
             let isExpiring = false;
             if (item.expirationDate) {
@@ -133,195 +130,206 @@ const App = () => {
         if (activeTab === 'settings') {
             const isGoogleUser = !!user && !!user.uid;
             return (
-                <Paper sx={{ p: 4, mt: 4, borderRadius: 4 }}>
-                    <Typography variant="h5" fontWeight="bold" gutterBottom>用户与应用设置</Typography>
-                    <Button
-                        startIcon={<Home />}
-                        onClick={() => setActiveTab('home')}
-                        sx={{ mb: 2, display: { xs: 'none', sm: 'inline-flex' } }}
-                    >
-                        返回主页
-                    </Button>
-                    <Stack spacing={2}>
-                        <Paper variant="outlined" sx={{ p: 3, bgcolor: 'grey.50' }}>
-                            <Typography variant="subtitle2" color="text.secondary">登录状态</Typography>
-                            {isGoogleUser ? (
-                                <>
-                                    <Typography variant="h6" color="success.main" fontWeight="bold">已通过 Google 登录</Typography>
-                                    <Typography variant="body2" color="text.secondary">用户: {user.email || user.displayName || 'Google 用户'}</Typography>
-                                    <Typography variant="caption" color="text.disabled" sx={{ wordBreak: 'break-all' }}>ID: {userId}</Typography>
-                                    <Button
-                                        variant="contained"
-                                        color="error"
-                                        startIcon={<LogOut size={16} />}
-                                        onClick={handleSignOutWrapper}
-                                        sx={{ mt: 2 }}
-                                    >
-                                        注销
-                                    </Button>
-                                </>
-                            ) : (
-                                <>
-                                    <Typography variant="h6" color="error.main" fontWeight="bold">未登录</Typography>
-                                    <Typography variant="body2" color="text.secondary">当前无法同步数据，请登录。</Typography>
-                                    {!configError && (
+                <Card>
+                    <CardContent sx={{ p: 4 }}>
+                        <Typography variant="h6" fontWeight="bold" gutterBottom>用户与应用设置</Typography>
+                        <Button
+                            startIcon={<Home />}
+                            onClick={() => setActiveTab('home')}
+                            sx={{ mb: 3, display: { xs: 'none', sm: 'inline-flex' } }}
+                        >
+                            返回主页
+                        </Button>
+                        <Stack spacing={3}>
+                            <Box sx={{ p: 3, bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom>登录状态</Typography>
+                                {isGoogleUser ? (
+                                    <>
+                                        <Typography variant="h6" color="success.main" fontWeight="bold">已通过 Google 登录</Typography>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>用户: {user.email || user.displayName || 'Google 用户'}</Typography>
+                                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5, wordBreak: 'break-all' }}>ID: {userId}</Typography>
                                         <Button
-                                            variant="contained"
-                                            startIcon={<Chrome size={16} />}
-                                            onClick={() => setShowAuthModal(true)}
-                                            sx={{ mt: 2 }}
+                                            variant="outlined"
+                                            color="error"
+                                            startIcon={<LogOut size={16} />}
+                                            onClick={handleSignOutWrapper}
+                                            sx={{ mt: 3 }}
                                         >
-                                            登录以同步
+                                            注销
                                         </Button>
-                                    )}
-                                </>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Typography variant="h6" color="error.main" fontWeight="bold">未登录</Typography>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>当前无法同步数据，请登录。</Typography>
+                                        {!configError && (
+                                            <Button
+                                                variant="contained"
+                                                startIcon={<Chrome size={16} />}
+                                                onClick={() => setShowAuthModal(true)}
+                                                sx={{ mt: 3 }}
+                                            >
+                                                登录以同步
+                                            </Button>
+                                        )}
+                                    </>
+                                )}
+                            </Box>
+                            {configError && (
+                                <Box sx={{ p: 3, bgcolor: 'error.lighter', color: 'error.dark', borderRadius: 2 }}>
+                                    <Typography fontWeight="bold">配置错误：</Typography>
+                                    <Typography>{configError}</Typography>
+                                </Box>
                             )}
-                        </Paper>
-                        {configError && (
-                            <Paper variant="outlined" sx={{ p: 3, bgcolor: 'error.light', color: 'error.contrastText' }}>
-                                <Typography fontWeight="bold">配置错误：</Typography>
-                                <Typography>{configError}</Typography>
-                            </Paper>
-                        )}
-                    </Stack>
-                </Paper>
+                        </Stack>
+                    </CardContent>
+                </Card>
             );
         }
 
         const itemsList = filteredInventory;
-        const titleText = activeTab === 'restock' ? '🚨 需补货/过期清单' : `${activeCategory} 物品`;
+        const titleText = activeTab === 'restock' ? '需补货/过期清单' : `${activeCategory} 物品`;
         const itemQuantity = itemsList.length;
         const isUserGoogleLoggedIn = !!user && !!user.uid;
 
         return (
-            <>
-                {/* 快捷操作和补货提醒 */}
-                <Paper sx={{ p: 3, mb: 4, borderRadius: 4, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { sm: 'center' }, gap: 2 }}>
-
-                    {(itemsToRestock.length > 0 || itemsExpiringSoon.length > 0) && isUserGoogleLoggedIn ? (
-                        <Box
-                            sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, cursor: 'pointer' }}
-                            onClick={() => setActiveTab('restock')}
-                        >
-                            {itemsToRestock.length > 0 && (
-                                <Chip
-                                    icon={<Warning />}
-                                    label={`${itemsToRestock.length} 个缺货`}
-                                    color="error"
-                                    variant="soft" // Note: variant="soft" needs custom theme or Joy UI, falling back to standard
-                                    sx={{ bgcolor: 'error.light', color: 'error.dark', fontWeight: 'bold' }}
-                                />
-                            )}
-
-                            {itemsExpiringSoon.length > 0 && (
-                                <Chip
-                                    icon={<Warning />}
-                                    label={`${itemsExpiringSoon.length} 个即将过期`}
-                                    color="warning"
-                                    sx={{ bgcolor: 'warning.light', color: 'warning.dark', fontWeight: 'bold' }}
-                                />
-                            )}
-                        </Box>
-                    ) : (
-                        <Chip
-                            icon={isUserGoogleLoggedIn ? <CheckCircle /> : <ErrorIcon />}
-                            label={isUserGoogleLoggedIn ? "库存情况良好！" : "请登录以启用云同步功能！"}
-                            color={isUserGoogleLoggedIn ? "success" : "error"}
-                            sx={{
-                                bgcolor: isUserGoogleLoggedIn ? 'success.light' : 'error.light',
-                                color: isUserGoogleLoggedIn ? 'success.dark' : 'error.dark',
-                                fontWeight: 'bold',
-                                py: 2
-                            }}
-                        />
-                    )}
-
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={handleAddItemClick}
-                        disabled={!isUserGoogleLoggedIn}
-                        sx={{ display: { xs: 'none', sm: 'flex' } }}
-                    >
-                        添加物品
-                    </Button>
-                </Paper>
-
-                {/* 搜索和分类过滤 (只在 'home' 标签页显示) */}
-                {activeTab !== 'restock' && (
-                    <Paper sx={{ p: 3, mb: 4, borderRadius: 4 }}>
-                        <Box sx={{ position: 'relative', mb: 3 }}>
-                            <Box sx={{ position: 'absolute', top: 12, left: 12, color: 'text.secondary' }}>
-                                <SearchIcon />
-                            </Box>
-                            <InputBase
-                                placeholder="🔍 搜索物品名称..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                sx={{
-                                    width: '100%',
-                                    pl: 6, pr: 2, py: 1,
-                                    border: 1, borderColor: 'divider', borderRadius: 3,
-                                    '&:focus-within': { borderColor: 'primary.main', borderWidth: 2 }
-                                }}
-                            />
-                        </Box>
-
-                        {/* 分类标签页 */}
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ gap: 1 }}>
-                            {Object.keys(categories).map(category => (
-                                <Chip
-                                    key={category}
-                                    label={category}
-                                    icon={React.cloneElement(categories[category], { className: "w-4 h-4" })}
-                                    onClick={() => setActiveCategory(category)}
-                                    color={activeCategory === category ? "primary" : "default"}
-                                    variant={activeCategory === category ? "filled" : "outlined"}
-                                    clickable
-                                    sx={{
-                                        borderRadius: 4,
-                                        px: 1,
-                                        py: 2.5,
-                                        '& .MuiChip-icon': { ml: 1 }
-                                    }}
-                                />
-                            ))}
-                        </Stack>
-                    </Paper>
-                )}
-
-                {/* 库存列表 */}
-                <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mb: 2 }}>
-                    {titleText} ({itemQuantity})
-                </Typography>
-
-                <Grid container spacing={3} pb={10}>
-                    {itemsList.length > 0 ? (
-                        itemsList.map(item => (
-                            <Grid item xs={12} sm={6} lg={4} key={item.id}>
-                                <ItemCard
-                                    item={item}
-                                    updateStock={updateStockWrapper}
-                                    deleteItem={deleteItemWrapper}
-                                    user={user}
-                                />
-                            </Grid>
-                        ))
-                    ) : (
-                        <Grid item xs={12}>
-                            <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 4, bgcolor: 'background.default' }} variant="outlined">
-                                <Typography color="text.secondary">
-                                    {isUserGoogleLoggedIn
-                                        ? (activeTab === 'restock'
-                                            ? "太棒了！所有物品库存都充足，且没有即将过期的物品。"
-                                            : `没有找到 ${activeCategory === '全部' ? '' : `"${activeCategory}"`} 物品。`)
-                                        : "请先登录，才能查看和管理您的物品清单。"}
+            <Stack spacing={4}>
+                {/* Dashboard / Stats Card */}
+                <Card>
+                    <CardContent sx={{ p: 3 }}>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={2}>
+                            <Box>
+                                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                    库存概览
                                 </Typography>
-                            </Paper>
-                        </Grid>
-                    )}
-                </Grid>
-            </>
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    {(itemsToRestock.length > 0 || itemsExpiringSoon.length > 0) && isUserGoogleLoggedIn ? (
+                                        <>
+                                            {itemsToRestock.length > 0 && (
+                                                <Chip
+                                                    label={`${itemsToRestock.length} 个缺货`}
+                                                    color="error"
+                                                    size="small"
+                                                    sx={{ fontWeight: 'bold' }}
+                                                />
+                                            )}
+                                            {itemsExpiringSoon.length > 0 && (
+                                                <Chip
+                                                    label={`${itemsExpiringSoon.length} 个即将过期`}
+                                                    color="warning"
+                                                    size="small"
+                                                    sx={{ fontWeight: 'bold' }}
+                                                />
+                                            )}
+                                        </>
+                                    ) : (
+                                        <Typography variant="body2" color={isUserGoogleLoggedIn ? "success.main" : "text.secondary"}>
+                                            {isUserGoogleLoggedIn ? "所有物品库存充足" : "请登录查看状态"}
+                                        </Typography>
+                                    )}
+                                </Stack>
+                            </Box>
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={handleAddItemClick}
+                                disabled={!isUserGoogleLoggedIn}
+                                sx={{ display: { xs: 'none', sm: 'flex' } }}
+                            >
+                                添加物品
+                            </Button>
+                        </Stack>
+                    </CardContent>
+                </Card>
+
+                {/* Filters & Content */}
+                <Card>
+                    <CardContent sx={{ p: 0 }}>
+                        {/* Search & Filter Header */}
+                        {activeTab !== 'restock' && (
+                            <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
+                                <Grid container spacing={2} alignItems="center">
+                                    <Grid item xs={12} md={4}>
+                                        <Box sx={{ position: 'relative' }}>
+                                            <Box sx={{ position: 'absolute', top: 10, left: 12, color: 'text.secondary' }}>
+                                                <SearchIcon fontSize="small" />
+                                            </Box>
+                                            <InputBase
+                                                placeholder="搜索物品..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                sx={{
+                                                    width: '100%',
+                                                    pl: 5, pr: 2, py: 0.5,
+                                                    border: '1px solid', borderColor: 'divider', borderRadius: 1,
+                                                    fontSize: '0.875rem',
+                                                    '&:focus-within': { borderColor: 'primary.main', borderWidth: 1 }
+                                                }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12} md={8}>
+                                        <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 0.5 }}>
+                                            {Object.keys(categories).map(category => (
+                                                <Chip
+                                                    key={category}
+                                                    label={category}
+                                                    onClick={() => setActiveCategory(category)}
+                                                    color={activeCategory === category ? "primary" : "default"}
+                                                    variant={activeCategory === category ? "filled" : "outlined"}
+                                                    clickable
+                                                    size="small"
+                                                    sx={{ borderRadius: 1 }}
+                                                />
+                                            ))}
+                                        </Stack>
+                                    </Grid>
+                                </Grid>
+                            </Box>
+                        )}
+
+                        {/* List Header */}
+                        <Box sx={{ px: 3, py: 2, bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">
+                                {titleText}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                共 {itemQuantity} 项
+                            </Typography>
+                        </Box>
+
+                        {/* Inventory Grid */}
+                        <Box sx={{ p: 3 }}>
+                            <Grid container spacing={2}>
+                                {itemsList.length > 0 ? (
+                                    itemsList.map(item => (
+                                        <Grid item xs={12} sm={6} lg={4} key={item.id}>
+                                            <ItemCard
+                                                item={item}
+                                                updateStock={updateStockWrapper}
+                                                deleteItem={deleteItemWrapper}
+                                                user={user}
+                                            />
+                                        </Grid>
+                                    ))
+                                ) : (
+                                    <Grid item xs={12}>
+                                        <Box sx={{ py: 8, textAlign: 'center' }}>
+                                            <Typography color="text.secondary">
+                                                {isUserGoogleLoggedIn
+                                                    ? (activeTab === 'restock'
+                                                        ? "没有需要补货或即将过期的物品"
+                                                        : "没有找到匹配的物品")
+                                                    : "请先登录"}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                )}
+                            </Grid>
+                        </Box>
+                    </CardContent>
+                </Card>
+            </Stack>
         );
     };
 
@@ -330,7 +338,7 @@ const App = () => {
         return (
             <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default' }}>
                 <CircularProgress size={40} />
-                <Typography sx={{ mt: 2, color: 'text.secondary' }}>正在等待认证和数据同步...</Typography>
+                <Typography sx={{ mt: 2, color: 'text.secondary' }}>加载中...</Typography>
             </Box>
         );
     }
