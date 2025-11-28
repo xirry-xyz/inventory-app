@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import {
     Package, Leaf, ShoppingCart, Wrench, Heart, Cat, Sprout,
@@ -49,11 +49,37 @@ const App = () => {
     } = useAuth();
 
     // Shared Lists & Invitations Hooks
-    const { sharedLists, createList, renameList, deleteList, mainListName } = useSharedLists(user);
+    const { sharedLists, loadingLists, createList, renameList, deleteList, mainListName } = useSharedLists(user);
     const { invitations, sendInvite, acceptInvite, declineInvite } = useInvitations(user);
 
     // Local State
     const [currentList, setCurrentList] = useState(null); // null = private, object = shared
+    const [isRestored, setIsRestored] = useState(false);
+
+    // Restore selected list from local storage
+    useEffect(() => {
+        if (!loadingLists && user && !isRestored) {
+            const lastListId = localStorage.getItem('lastSelectedListId');
+            if (lastListId && lastListId !== 'private') {
+                const foundList = sharedLists.find(l => l.id === lastListId);
+                if (foundList) {
+                    setCurrentList(foundList);
+                }
+            }
+            setIsRestored(true);
+        } else if (!user && !isRestored) {
+            // If no user, just mark as restored so we don't block anything, though saving won't matter much
+            setIsRestored(true);
+        }
+    }, [loadingLists, sharedLists, user, isRestored]);
+
+    // Save selected list to local storage
+    useEffect(() => {
+        if (isRestored && user) {
+            const idToSave = currentList ? currentList.id : 'private';
+            localStorage.setItem('lastSelectedListId', idToSave);
+        }
+    }, [currentList, isRestored, user]);
 
     const {
         inventory, loading, addItem, updateStock, deleteItem, markAsReplaced, error: inventoryError
