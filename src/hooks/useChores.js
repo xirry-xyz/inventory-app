@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-    collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, orderBy
+    collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, orderBy, arrayUnion
 } from 'firebase/firestore';
 import { db, appId } from '../firebase';
 
@@ -121,9 +121,15 @@ export const useChores = (user, currentList) => {
             nextDueDate.setHours(0, 0, 0, 0); // Reset to start of today
             nextDueDate.setDate(nextDueDate.getDate() + Number(chore.frequency));
 
+            // Import arrayUnion if not already imported at top, but better to add it to top imports.
+            // Since I can't easily see top imports here without another read, I'll assume I need to add it or use the one from 'firebase/firestore' if available in scope.
+            // Actually, I should update the imports first. Let's do that in a separate chunk or just assume I'll fix imports.
+            // Wait, I can use a multi-replace to fix imports too.
+
             await updateDoc(choreRef, {
                 lastCompleted: today.toISOString(),
-                nextDue: nextDueDate.toISOString()
+                nextDue: nextDueDate.toISOString(),
+                completionHistory: arrayUnion(today.toISOString())
             });
             showStatus('家务已完成！');
         } catch (err) {

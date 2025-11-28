@@ -23,6 +23,7 @@ import SettingsPage from './components/SettingsPage';
 import NotificationPage from './components/NotificationPage';
 import ChoreList from './components/ChoreList';
 import ChoreForm from './components/ChoreForm';
+import ChoreCalendar from './components/ChoreCalendar';
 
 import {
     Box, Typography, Grid, Paper, InputBase, IconButton, Button, Chip, Stack, CircularProgress, Card, CardContent, Divider, useMediaQuery, Tabs, Tab
@@ -325,6 +326,7 @@ const App = () => {
                             <Box sx={{ p: 0 }}>
                                 {activeTab === 'chores' ? (
                                     <Box sx={{ p: 2 }}>
+                                        <ChoreCalendar chores={chores} />
                                         <ChoreList
                                             chores={chores}
                                             onComplete={(chore) => completeChore(chore, showStatus)}
