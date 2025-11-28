@@ -21,6 +21,7 @@ export const useSharedLists = (user) => {
 
         // Fetch ALL lists where the user is a member (owned or shared)
         // We use collectionGroup to find lists across all users
+        setLoadingLists(true);
         const q = query(
             collectionGroup(db, 'lists'),
             where('members', 'array-contains', user.uid)
