@@ -82,7 +82,7 @@ const ChoreList = ({ chores, onComplete, onDelete, onEdit, user }) => {
                                     onClick={() => onComplete(chore)}
                                     disabled={!user}
                                     disableElevation
-                                    color={status.color === 'success' ? 'primary' : status.color}
+                                    color="primary"
                                     sx={{ borderRadius: 2, px: 2 }}
                                 >
                                     完成
