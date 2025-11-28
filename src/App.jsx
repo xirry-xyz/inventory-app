@@ -274,7 +274,7 @@ const App = () => {
                                     </Stack>
                                     {currentList && currentList.type === 'shared' && (
                                         <Typography variant="caption" color="text.secondary">
-                                            创建者: {currentList.ownerEmail} | 成员: {currentList.memberEmails ? currentList.memberEmails.join(', ') : '加载中...'}
+                                            创建者: {currentList.ownerEmail || '未知'} | 成员: {currentList.memberEmails ? currentList.memberEmails.join(', ') : `${currentList.members ? currentList.members.length : 0} 人`}
                                         </Typography>
                                     )}
                                 </Stack>
