@@ -56,7 +56,7 @@ const InventoryTable = ({ items, updateStock, deleteItem, user, markAsReplaced }
     };
 
     return (
-        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+        <TableContainer sx={{ borderRadius: 0 }}>
             <Table sx={{ minWidth: 650 }} aria-label="inventory table">
                 <TableHead sx={{ bgcolor: 'background.default' }}>
                     <TableRow>

@@ -167,7 +167,7 @@ const App = () => {
         return (
             <Stack spacing={3}>
                 {/* Tabs Navigation */}
-                <Paper sx={{ borderRadius: 2 }}>
+                <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
                     <Tabs
                         value={activeTab}
                         onChange={(e, newValue) => setActiveTab(newValue)}
@@ -210,7 +210,7 @@ const App = () => {
 
                 {/* Filters & Content (Only on Inventory or Restock) */}
                 {(activeTab === 'inventory' || activeTab === 'restock') && (
-                    <Card>
+                    <Card sx={{ overflow: 'hidden' }}>
                         <CardContent sx={{ p: 0 }}>
                             {/* Search & Filter Header */}
                             {activeTab !== 'restock' && (
