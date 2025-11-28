@@ -55,6 +55,12 @@ service cloud.firestore {
             // Allow recipient to READ and UPDATE
             allow read, update: if isAuthenticated() && resource.data.toEmail == request.auth.token.email;
           }
+
+          match /chores/{choreId} {
+            allow read, write: if isOwner(userId);
+            allow read, write: if isAuthenticated() && 
+              request.auth.uid in get(/databases/$(database)/documents/artifacts/$(appId)/users/$(userId)/lists/$(listId)).data.members;
+          }
         }
       }
     }

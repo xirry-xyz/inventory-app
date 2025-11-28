@@ -9,6 +9,7 @@ import { useAuth } from './hooks/useAuth';
 import { useInventory } from './hooks/useInventory';
 import { useSharedLists } from './hooks/useSharedLists';
 import { useInvitations } from './hooks/useInvitations';
+import { useChores } from './hooks/useChores';
 import theme from './theme';
 
 import Layout from './components/Layout';
@@ -20,6 +21,8 @@ import ItemCard from './components/ItemCard'; // Keep for mobile view if needed,
 import StatusMessage from './components/StatusMessage';
 import SettingsPage from './components/SettingsPage';
 import NotificationPage from './components/NotificationPage';
+import ChoreList from './components/ChoreList';
+import ChoreForm from './components/ChoreForm';
 
 import {
     Box, Typography, Grid, Paper, InputBase, IconButton, Button, Chip, Stack, CircularProgress, Card, CardContent, Divider, useMediaQuery, Tabs, Tab
@@ -55,9 +58,14 @@ const App = () => {
         inventory, loading, addItem, updateStock, deleteItem, markAsReplaced, error: inventoryError
     } = useInventory(user, configError, isAuthReady, currentList);
 
+    const {
+        chores, addChore, updateChore, deleteChore, completeChore
+    } = useChores(user, currentList);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('全部');
     const [showItemModal, setShowItemModal] = useState(false);
+    const [showChoreModal, setShowChoreModal] = useState(false);
     const [newItem, setNewItem] = useState({ name: '', safetyStock: 1, currentStock: 0, category: '日用百货', expirationDate: '' });
     const [statusMessage, setStatusMessage] = useState(null);
     const [activeTab, setActiveTab] = useState('inventory');
@@ -86,7 +94,11 @@ const App = () => {
             showStatus('请先登录才能添加物品', true);
             setShowAuthModal(true);
         } else {
-            setShowItemModal(true);
+            if (activeTab === 'chores') {
+                setShowChoreModal(true);
+            } else {
+                setShowItemModal(true);
+            }
         }
     };
 
@@ -95,6 +107,13 @@ const App = () => {
         if (success) {
             setShowItemModal(false);
             setNewItem({ name: '', safetyStock: 1, currentStock: 0, category: '日用百货', expirationDate: '' });
+        }
+    };
+
+    const handleAddChore = async (chore) => {
+        const success = await addChore(chore, showStatus);
+        if (success) {
+            setShowChoreModal(false);
         }
     };
 
@@ -177,6 +196,7 @@ const App = () => {
                     >
                         <Tab label="物品清单" value="inventory" />
                         <Tab label="补货提醒" value="restock" />
+                        <Tab label="家务提醒" value="chores" />
                     </Tabs>
                 </Paper>
 
@@ -209,11 +229,11 @@ const App = () => {
                 )}
 
                 {/* Filters & Content (Only on Inventory or Restock) */}
-                {(activeTab === 'inventory' || activeTab === 'restock') && (
+                {(activeTab === 'inventory' || activeTab === 'restock' || activeTab === 'chores') && (
                     <Card sx={{ overflow: 'hidden' }}>
                         <CardContent sx={{ p: 0 }}>
-                            {/* Search & Filter Header */}
-                            {activeTab !== 'restock' && (
+                            {/* Search & Filter Header (Only for Inventory/Restock) */}
+                            {activeTab !== 'restock' && activeTab !== 'chores' && (
                                 <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
                                     <Grid container spacing={2} alignItems="center">
                                         <Grid item xs={12} md={4}>
@@ -260,7 +280,7 @@ const App = () => {
                                 <Stack direction="column" spacing={0.5}>
                                     <Stack direction="row" alignItems="center" spacing={1}>
                                         <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">
-                                            {titleText}
+                                            {activeTab === 'chores' ? '家务任务' : titleText}
                                         </Typography>
                                         {currentList && (
                                             <Chip
@@ -296,47 +316,58 @@ const App = () => {
                                         onClick={handleAddItemClick}
                                         disabled={!user}
                                     >
-                                        添加物品
+                                        {activeTab === 'chores' ? '添加任务' : '添加物品'}
                                     </Button>
                                 </Stack>
                             </Box>
 
-                            {/* Inventory Table (Desktop) / Grid (Mobile) */}
+                            {/* Content Area */}
                             <Box sx={{ p: 0 }}>
-                                {itemsList.length > 0 ? (
-                                    isMobile ? (
-                                        <Grid container spacing={2} sx={{ p: 2 }}>
-                                            {itemsList.map(item => (
-                                                <Grid item xs={12} key={item.id}>
-                                                    <ItemCard
-                                                        item={item}
-                                                        updateStock={updateStockWrapper}
-                                                        deleteItem={deleteItemWrapper}
-                                                        markAsReplaced={markAsReplacedWrapper}
-                                                        user={user}
-                                                    />
-                                                </Grid>
-                                            ))}
-                                        </Grid>
-                                    ) : (
-                                        <InventoryTable
-                                            items={itemsList}
-                                            updateStock={updateStockWrapper}
-                                            deleteItem={deleteItemWrapper}
-                                            markAsReplaced={markAsReplacedWrapper}
+                                {activeTab === 'chores' ? (
+                                    <Box sx={{ p: 2 }}>
+                                        <ChoreList
+                                            chores={chores}
+                                            onComplete={(chore) => completeChore(chore, showStatus)}
+                                            onDelete={(id) => deleteChore(id, showStatus)}
                                             user={user}
                                         />
-                                    )
-                                ) : (
-                                    <Box sx={{ py: 8, textAlign: 'center' }}>
-                                        <Typography color="text.secondary">
-                                            {isUserGoogleLoggedIn
-                                                ? (activeTab === 'restock'
-                                                    ? "没有需要补货或即将过期的物品"
-                                                    : "没有找到匹配的物品")
-                                                : "请先登录"}
-                                        </Typography>
                                     </Box>
+                                ) : (
+                                    itemsList.length > 0 ? (
+                                        isMobile ? (
+                                            <Grid container spacing={2} sx={{ p: 2 }}>
+                                                {itemsList.map(item => (
+                                                    <Grid item xs={12} key={item.id}>
+                                                        <ItemCard
+                                                            item={item}
+                                                            updateStock={updateStockWrapper}
+                                                            deleteItem={deleteItemWrapper}
+                                                            markAsReplaced={markAsReplacedWrapper}
+                                                            user={user}
+                                                        />
+                                                    </Grid>
+                                                ))}
+                                            </Grid>
+                                        ) : (
+                                            <InventoryTable
+                                                items={itemsList}
+                                                updateStock={updateStockWrapper}
+                                                deleteItem={deleteItemWrapper}
+                                                markAsReplaced={markAsReplacedWrapper}
+                                                user={user}
+                                            />
+                                        )
+                                    ) : (
+                                        <Box sx={{ py: 8, textAlign: 'center' }}>
+                                            <Typography color="text.secondary">
+                                                {isUserGoogleLoggedIn
+                                                    ? (activeTab === 'restock'
+                                                        ? "没有需要补货或即将过期的物品"
+                                                        : "没有找到匹配的物品")
+                                                    : "请先登录"}
+                                            </Typography>
+                                        </Box>
+                                    )
                                 )}
                             </Box>
                         </CardContent>
@@ -417,6 +448,17 @@ const App = () => {
                         addItem={handleAddItem}
                         user={user}
                         showStatus={showStatus}
+                    />
+                </CustomModal>
+
+                <CustomModal
+                    title="添加家务任务"
+                    isOpen={showChoreModal}
+                    onClose={() => setShowChoreModal(false)}
+                >
+                    <ChoreForm
+                        onSubmit={handleAddChore}
+                        onCancel={() => setShowChoreModal(false)}
                     />
                 </CustomModal>
 
