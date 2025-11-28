@@ -114,17 +114,21 @@ export const useChores = (user, currentList) => {
             const choreRef = doc(db, path, chore.id);
 
             const today = new Date();
-            // today.setHours(0, 0, 0, 0); // Keep time for record? Or just date? Let's keep full timestamp for record.
+            const todayStr = today.toDateString();
+
+            // Check if already completed today
+            if (chore.lastCompleted) {
+                const lastDate = new Date(chore.lastCompleted);
+                if (lastDate.toDateString() === todayStr) {
+                    showStatus('今天已经完成过了，无需重复打卡', true);
+                    return;
+                }
+            }
 
             // Calculate next due date
             const nextDueDate = new Date();
             nextDueDate.setHours(0, 0, 0, 0); // Reset to start of today
             nextDueDate.setDate(nextDueDate.getDate() + Number(chore.frequency));
-
-            // Import arrayUnion if not already imported at top, but better to add it to top imports.
-            // Since I can't easily see top imports here without another read, I'll assume I need to add it or use the one from 'firebase/firestore' if available in scope.
-            // Actually, I should update the imports first. Let's do that in a separate chunk or just assume I'll fix imports.
-            // Wait, I can use a multi-replace to fix imports too.
 
             await updateDoc(choreRef, {
                 lastCompleted: today.toISOString(),
