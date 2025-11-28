@@ -4,7 +4,7 @@ import {
     Paper, IconButton, Chip, Typography, Box, Stack
 } from '@mui/material';
 import {
-    Add, Remove, Delete, Edit, Warning, CheckCircle, EventBusy, Schedule, CalendarToday
+    Add, Remove, Delete, Edit, Warning, CheckCircle, EventBusy, Schedule, CalendarToday, Autorenew
 } from '@mui/icons-material';
 import {
     ShoppingCart, Package, Heart, Leaf, Wrench, Sprout, Cat
@@ -20,7 +20,7 @@ const categories = {
     '其他': <Sprout className="w-4 h-4" />,
 };
 
-const InventoryTable = ({ items, updateStock, deleteItem, user, onEdit }) => {
+const InventoryTable = ({ items, updateStock, deleteItem, user, markAsReplaced }) => {
     const isUserLoggedIn = !!user && !!user.uid;
 
     const getExpirationStatus = (date) => {
@@ -30,6 +30,24 @@ const InventoryTable = ({ items, updateStock, deleteItem, user, onEdit }) => {
         const expDate = new Date(date);
         expDate.setHours(0, 0, 0, 0);
         const diffTime = expDate - today;
+        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (daysRemaining < 0) return { status: 'expired', days: Math.abs(daysRemaining) };
+        if (daysRemaining <= 7) return { status: 'warning', days: daysRemaining };
+        return { status: 'good', days: daysRemaining };
+    };
+
+    const getPeriodicStatus = (item) => {
+        if (!item.isPeriodic || !item.lastReplaced || !item.replacementCycle) return null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const lastDate = new Date(item.lastReplaced);
+        lastDate.setHours(0, 0, 0, 0);
+
+        const nextDate = new Date(lastDate);
+        nextDate.setDate(nextDate.getDate() + Number(item.replacementCycle));
+
+        const diffTime = nextDate - today;
         const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (daysRemaining < 0) return { status: 'expired', days: Math.abs(daysRemaining) };
@@ -55,6 +73,7 @@ const InventoryTable = ({ items, updateStock, deleteItem, user, onEdit }) => {
                     {items.map((item) => {
                         const needsRestock = item.currentStock <= item.safetyStock;
                         const expInfo = getExpirationStatus(item.expirationDate);
+                        const periodicInfo = getPeriodicStatus(item);
 
                         return (
                             <TableRow
@@ -138,6 +157,33 @@ const InventoryTable = ({ items, updateStock, deleteItem, user, onEdit }) => {
                                                     expInfo.status === 'warning' ? `${expInfo.days} 天后` :
                                                         item.expirationDate}
                                             </Typography>
+                                        </Stack>
+                                    ) : periodicInfo ? (
+                                        <Stack direction="row" alignItems="center" spacing={1}>
+                                            {periodicInfo.status === 'expired' ? <Autorenew fontSize="small" color="error" /> :
+                                                periodicInfo.status === 'warning' ? <Autorenew fontSize="small" color="warning" /> :
+                                                    <Autorenew fontSize="small" color="success" />}
+
+                                            <Typography
+                                                variant="body2"
+                                                color={
+                                                    periodicInfo.status === 'expired' ? 'error.main' :
+                                                        periodicInfo.status === 'warning' ? 'warning.main' : 'text.primary'
+                                                }
+                                            >
+                                                {periodicInfo.status === 'expired' ? `超期 ${periodicInfo.days} 天` :
+                                                    periodicInfo.status === 'warning' ? `${periodicInfo.days} 天后更换` :
+                                                        `${periodicInfo.days} 天后更换`}
+                                            </Typography>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => markAsReplaced(item.id)}
+                                                disabled={!isUserLoggedIn}
+                                                title="标记为已更换"
+                                                sx={{ p: 0.5 }}
+                                            >
+                                                <CheckCircle fontSize="small" color="action" />
+                                            </IconButton>
                                         </Stack>
                                     ) : (
                                         <Typography variant="body2" color="text.secondary">-</Typography>

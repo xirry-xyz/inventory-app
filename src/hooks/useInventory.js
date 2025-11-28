@@ -19,7 +19,21 @@ const getUserCollectionPath = (userId, collectionName) => {
     return `artifacts/${appId}/users/${userId}/${collectionName}`;
 }
 
-export const useInventory = (user, configError, isAuthReady, setConfigError) => {
+const getInventoryCollectionPath = (userId, currentList) => {
+    if (!userId) return null;
+
+    // If a specific list is selected (Private or Shared)
+    if (currentList) {
+        // Items are stored in a sub-collection of the list document
+        // Path: artifacts/{appId}/users/{listOwnerId}/lists/{listId}/items
+        return `artifacts/${appId}/users/${currentList.ownerId}/lists/${currentList.id}/items`;
+    }
+
+    // Default to private inventory (legacy/default path)
+    return `artifacts/${appId}/users/${userId}/inventory`;
+}
+
+export const useInventory = (user, configError, isAuthReady, setConfigError, currentList) => {
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -31,7 +45,7 @@ export const useInventory = (user, configError, isAuthReady, setConfigError) => 
         }
 
         const actualUserId = user.uid;
-        const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
+        const inventoryCollectionPath = getInventoryCollectionPath(actualUserId, currentList);
 
         if (!inventoryCollectionPath) {
             console.error("Firestore Error: 无法构建有效的集合路径。");
@@ -57,9 +71,18 @@ export const useInventory = (user, configError, isAuthReady, setConfigError) => 
                     return restockA - restockB;
                 }
 
-                // 其次按过期时间排序 (如果有)
+                // 其次按过期时间或更换周期排序
                 if (a.expirationDate && b.expirationDate) {
                     return new Date(a.expirationDate) - new Date(b.expirationDate);
+                }
+
+                // 周期性物品排序
+                if (a.isPeriodic && b.isPeriodic) {
+                    const nextA = new Date(a.lastReplaced);
+                    nextA.setDate(nextA.getDate() + Number(a.replacementCycle));
+                    const nextB = new Date(b.lastReplaced);
+                    nextB.setDate(nextB.getDate() + Number(b.replacementCycle));
+                    return nextA - nextB;
                 }
 
                 // 最后按名称排序
@@ -78,7 +101,7 @@ export const useInventory = (user, configError, isAuthReady, setConfigError) => 
         });
 
         return () => unsubscribe();
-    }, [isAuthReady, user, db, configError, setConfigError]);
+    }, [isAuthReady, user, db, configError, setConfigError, currentList]);
 
     const addItem = useCallback(async (newItem, showStatus) => {
         const name = newItem.name.trim();
@@ -93,7 +116,7 @@ export const useInventory = (user, configError, isAuthReady, setConfigError) => 
         }
 
         const actualUserId = user.uid;
-        const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
+        const inventoryCollectionPath = getInventoryCollectionPath(actualUserId, currentList);
 
         if (!inventoryCollectionPath) {
             showStatus('错误：无法获取存储路径，请刷新重试。', true, 4000);
@@ -109,6 +132,9 @@ export const useInventory = (user, configError, isAuthReady, setConfigError) => 
             expirationDate: newItem.expirationDate || null, // Add expiration date
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
+            isPeriodic: newItem.isPeriodic || false,
+            replacementCycle: newItem.isPeriodic ? Number(newItem.replacementCycle) : null,
+            lastReplaced: newItem.isPeriodic ? (newItem.lastReplaced || new Date().toISOString().split('T')[0]) : null,
         };
 
         try {
@@ -119,7 +145,7 @@ export const useInventory = (user, configError, isAuthReady, setConfigError) => 
             showStatus(`添加失败: ${e.message}`, true, 5000);
             return false;
         }
-    }, [user, configError]);
+    }, [user, configError, currentList]);
 
     const updateStock = async (id, newStock, showStatus) => {
         if (!user || !user.uid || configError || !db) {
@@ -127,7 +153,7 @@ export const useInventory = (user, configError, isAuthReady, setConfigError) => 
             return;
         }
         const actualUserId = user.uid;
-        const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
+        const inventoryCollectionPath = getInventoryCollectionPath(actualUserId, currentList);
 
         if (!inventoryCollectionPath) return;
 
@@ -148,7 +174,7 @@ export const useInventory = (user, configError, isAuthReady, setConfigError) => 
             return;
         }
         const actualUserId = user.uid;
-        const inventoryCollectionPath = getUserCollectionPath(actualUserId, 'inventory');
+        const inventoryCollectionPath = getInventoryCollectionPath(actualUserId, currentList);
 
         if (!inventoryCollectionPath) return;
 
@@ -163,11 +189,35 @@ export const useInventory = (user, configError, isAuthReady, setConfigError) => 
         }
     };
 
+    const markAsReplaced = async (id, showStatus) => {
+        if (!user || !user.uid || configError || !db) {
+            showStatus('错误：请先登录才能修改数据。', true, 4000);
+            return;
+        }
+        const actualUserId = user.uid;
+        const inventoryCollectionPath = getInventoryCollectionPath(actualUserId, currentList);
+
+        if (!inventoryCollectionPath) return;
+
+        try {
+            const itemRef = doc(db, inventoryCollectionPath, id);
+            await updateDoc(itemRef, {
+                lastReplaced: new Date().toISOString().split('T')[0],
+                updatedAt: serverTimestamp(),
+            });
+            showStatus('已更新更换日期！');
+        } catch (e) {
+            showStatus(`更新失败: ${e.message}`, true, 5000);
+        }
+    };
+
     return {
         inventory,
         loading,
         addItem,
         updateStock,
-        deleteItem
+        updateStock,
+        deleteItem,
+        markAsReplaced
     };
 };

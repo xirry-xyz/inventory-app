@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import {
-    TextField, Button, FormControl, InputLabel, Select, MenuItem, Grid, Box, Typography
+    TextField, Button, FormControl, InputLabel, Select, MenuItem, Grid, Box, Typography, FormControlLabel, Checkbox
 } from '@mui/material';
 
 const categories = [
@@ -15,10 +15,10 @@ const categories = [
 const ItemForm = memo(({ newItem, setNewItem, addItem, user, showStatus }) => {
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, checked, type } = e.target;
         setNewItem(prev => ({
             ...prev,
-            [name]: value
+            [name]: type === 'checkbox' ? checked : value
         }));
     };
 
@@ -107,6 +107,54 @@ const ItemForm = memo(({ newItem, setNewItem, addItem, user, showStatus }) => {
                         InputLabelProps={{ shrink: true }}
                     />
                 </Grid>
+            </Grid>
+
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                周期性更换 (可选)
+            </Typography>
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={12}>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={newItem.isPeriodic || false}
+                                onChange={handleInputChange}
+                                name="isPeriodic"
+                            />
+                        }
+                        label="启用周期性更换提醒 (如电动牙刷头)"
+                    />
+                </Grid>
+                {newItem.isPeriodic && (
+                    <>
+                        <Grid item xs={6}>
+                            <TextField
+                                fullWidth
+                                label="更换周期 (天)"
+                                name="replacementCycle"
+                                type="number"
+                                value={newItem.replacementCycle || ''}
+                                onChange={handleInputChange}
+                                required={newItem.isPeriodic}
+                                size="small"
+                                inputProps={{ min: 1 }}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                fullWidth
+                                label="上次更换日期"
+                                name="lastReplaced"
+                                type="date"
+                                value={newItem.lastReplaced || new Date().toISOString().split('T')[0]}
+                                onChange={handleInputChange}
+                                required={newItem.isPeriodic}
+                                size="small"
+                                InputLabelProps={{ shrink: true }}
+                            />
+                        </Grid>
+                    </>
+                )}
             </Grid>
 
             <Button

@@ -7,6 +7,8 @@ import {
 
 import { useAuth } from './hooks/useAuth';
 import { useInventory } from './hooks/useInventory';
+import { useSharedLists } from './hooks/useSharedLists';
+import { useInvitations } from './hooks/useInvitations';
 import theme from './theme';
 
 import Layout from './components/Layout';
@@ -16,11 +18,13 @@ import ItemForm from './components/ItemForm';
 import InventoryTable from './components/InventoryTable';
 import ItemCard from './components/ItemCard'; // Keep for mobile view if needed, or just use table
 import StatusMessage from './components/StatusMessage';
+import SettingsPage from './components/SettingsPage';
+import NotificationPage from './components/NotificationPage';
 
 import {
-    Box, Typography, Grid, Paper, InputBase, IconButton, Button, Chip, Stack, CircularProgress, Card, CardContent, Divider, useMediaQuery
+    Box, Typography, Grid, Paper, InputBase, IconButton, Button, Chip, Stack, CircularProgress, Card, CardContent, Divider, useMediaQuery, Tabs, Tab
 } from '@mui/material';
-import { Search as SearchIcon, Add as AddIcon, CheckCircle, Warning, Error as ErrorIcon } from '@mui/icons-material';
+import { Search as SearchIcon, Add as AddIcon, CheckCircle, Warning, Error as ErrorIcon, Share } from '@mui/icons-material';
 
 // Categories constant
 const categories = {
@@ -40,17 +44,23 @@ const App = () => {
         handleGoogleSignIn, handleSignOut, setConfigError
     } = useAuth();
 
-    const {
-        inventory, loading, addItem, updateStock, deleteItem
-    } = useInventory(user, configError, isAuthReady, setConfigError);
+    // Shared Lists & Invitations Hooks
+    const { sharedLists, createList, renameList, deleteList, mainListName } = useSharedLists(user);
+    const { invitations, sendInvite, acceptInvite, declineInvite } = useInvitations(user);
 
     // Local State
+    const [currentList, setCurrentList] = useState(null); // null = private, object = shared
+
+    const {
+        inventory, loading, addItem, updateStock, deleteItem, markAsReplaced
+    } = useInventory(user, configError, isAuthReady, setConfigError, currentList);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('全部');
     const [showItemModal, setShowItemModal] = useState(false);
     const [newItem, setNewItem] = useState({ name: '', safetyStock: 1, currentStock: 0, category: '日用百货', expirationDate: '' });
     const [statusMessage, setStatusMessage] = useState(null);
-    const [activeTab, setActiveTab] = useState('home');
+    const [activeTab, setActiveTab] = useState('inventory');
 
     // Helpers
     const showStatus = useCallback((message, isError = false, duration = 3000) => {
@@ -58,6 +68,18 @@ const App = () => {
         const timer = setTimeout(() => setStatusMessage(null), duration);
         return () => clearTimeout(timer);
     }, []);
+
+    const handleCreateList = (name, type) => createList(name, type, showStatus);
+    const handleRenameList = (id, name) => renameList(id, name, showStatus);
+    const handleDeleteList = (id) => deleteList(id, showStatus);
+
+    const handleShareList = () => {
+        if (!currentList) return;
+        const email = prompt("请输入要邀请的用户 Gmail 地址:");
+        if (email) {
+            sendInvite(email, currentList.id, currentList.name, showStatus);
+        }
+    };
 
     const handleAddItemClick = () => {
         if (!user || !user.uid) {
@@ -86,6 +108,7 @@ const App = () => {
 
     const updateStockWrapper = (id, newStock) => updateStock(id, newStock, showStatus);
     const deleteItemWrapper = (id) => deleteItem(id, showStatus);
+    const markAsReplacedWrapper = (id) => markAsReplaced(id, showStatus);
 
 
     // Filtering Logic
@@ -130,57 +153,10 @@ const App = () => {
 
     // Render Content
     const renderContent = () => {
-        if (activeTab === 'settings') {
-            const isGoogleUser = !!user && !!user.uid;
-            return (
-                <Card>
-                    <CardContent sx={{ p: 4 }}>
-                        <Typography variant="h6" fontWeight="bold" gutterBottom>用户与应用设置</Typography>
-                        <Stack spacing={3}>
-                            <Box sx={{ p: 3, bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                                <Typography variant="subtitle2" color="text.secondary" gutterBottom>登录状态</Typography>
-                                {isGoogleUser ? (
-                                    <>
-                                        <Typography variant="h6" color="success.main" fontWeight="bold">已通过 Google 登录</Typography>
-                                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>用户: {user.email || user.displayName || 'Google 用户'}</Typography>
-                                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5, wordBreak: 'break-all' }}>ID: {userId}</Typography>
-                                        <Button
-                                            variant="outlined"
-                                            color="error"
-                                            startIcon={<LogOut size={16} />}
-                                            onClick={handleSignOutWrapper}
-                                            sx={{ mt: 3 }}
-                                        >
-                                            注销
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Typography variant="h6" color="error.main" fontWeight="bold">未登录</Typography>
-                                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>当前无法同步数据，请登录。</Typography>
-                                        {!configError && (
-                                            <Button
-                                                variant="contained"
-                                                startIcon={<Chrome size={16} />}
-                                                onClick={() => setShowAuthModal(true)}
-                                                sx={{ mt: 3 }}
-                                            >
-                                                登录以同步
-                                            </Button>
-                                        )}
-                                    </>
-                                )}
-                            </Box>
-                            {configError && (
-                                <Box sx={{ p: 3, bgcolor: 'error.lighter', color: 'error.dark', borderRadius: 2 }}>
-                                    <Typography fontWeight="bold">配置错误：</Typography>
-                                    <Typography>{configError}</Typography>
-                                </Box>
-                            )}
-                        </Stack>
-                    </CardContent>
-                </Card>
-            );
+        // The settings and notifications pages are now rendered directly in Layout's children,
+        // so this function only handles inventory and restock tabs.
+        if (activeTab === 'settings' || activeTab === 'notifications') {
+            return null;
         }
 
         const itemsList = filteredInventory;
@@ -189,133 +165,176 @@ const App = () => {
         const isUserGoogleLoggedIn = !!user && !!user.uid;
 
         return (
-            <Stack spacing={4}>
-                {/* Dashboard Stats */}
-                <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6} md={4}>
-                        <Card>
-                            <CardContent>
-                                <Typography color="text.secondary" gutterBottom>总物品数</Typography>
-                                <Typography variant="h4" fontWeight="bold">{inventory.length}</Typography>
+            <Stack spacing={3}>
+                {/* Tabs Navigation */}
+                <Paper sx={{ borderRadius: 2 }}>
+                    <Tabs
+                        value={activeTab}
+                        onChange={(e, newValue) => setActiveTab(newValue)}
+                        indicatorColor="primary"
+                        textColor="primary"
+                        variant="fullWidth"
+                    >
+                        <Tab label="物品清单" value="inventory" />
+                        <Tab label="补货提醒" value="restock" />
+                    </Tabs>
+                </Paper>
+
+                {/* Dashboard Stats (Only on Inventory) */}
+                {activeTab === 'inventory' && (
+                    <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
+                        <Card sx={{ flex: 1 }}>
+                            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 }, textAlign: 'center' }}>
+                                <Typography variant="body2" color="text.secondary">总物品</Typography>
+                                <Typography variant="h5" fontWeight="bold">{inventory.length}</Typography>
                             </CardContent>
                         </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                        <Card>
-                            <CardContent>
-                                <Typography color="text.secondary" gutterBottom>需补货</Typography>
-                                <Typography variant="h4" fontWeight="bold" color={itemsToRestock.length > 0 ? "error.main" : "text.primary"}>
+                        <Card sx={{ flex: 1 }}>
+                            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 }, textAlign: 'center' }}>
+                                <Typography variant="body2" color="text.secondary">需补货</Typography>
+                                <Typography variant="h5" fontWeight="bold" color={itemsToRestock.length > 0 ? "error.main" : "text.primary"}>
                                     {itemsToRestock.length}
                                 </Typography>
                             </CardContent>
                         </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                        <Card>
-                            <CardContent>
-                                <Typography color="text.secondary" gutterBottom>即将过期</Typography>
-                                <Typography variant="h4" fontWeight="bold" color={itemsExpiringSoon.length > 0 ? "warning.main" : "text.primary"}>
+                        <Card sx={{ flex: 1 }}>
+                            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 }, textAlign: 'center' }}>
+                                <Typography variant="body2" color="text.secondary">即将过期</Typography>
+                                <Typography variant="h5" fontWeight="bold" color={itemsExpiringSoon.length > 0 ? "warning.main" : "text.primary"}>
                                     {itemsExpiringSoon.length}
                                 </Typography>
                             </CardContent>
                         </Card>
-                    </Grid>
-                </Grid>
+                    </Stack>
+                )}
 
-                {/* Filters & Content */}
-                <Card>
-                    <CardContent sx={{ p: 0 }}>
-                        {/* Search & Filter Header */}
-                        {activeTab !== 'restock' && (
-                            <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
-                                <Grid container spacing={2} alignItems="center">
-                                    <Grid item xs={12} md={4}>
-                                        <Box sx={{ position: 'relative' }}>
-                                            <Box sx={{ position: 'absolute', top: 10, left: 12, color: 'text.secondary' }}>
-                                                <SearchIcon fontSize="small" />
+                {/* Filters & Content (Only on Inventory or Restock) */}
+                {(activeTab === 'inventory' || activeTab === 'restock') && (
+                    <Card>
+                        <CardContent sx={{ p: 0 }}>
+                            {/* Search & Filter Header */}
+                            {activeTab !== 'restock' && (
+                                <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
+                                    <Grid container spacing={2} alignItems="center">
+                                        <Grid item xs={12} md={4}>
+                                            <Box sx={{ position: 'relative' }}>
+                                                <Box sx={{ position: 'absolute', top: 10, left: 12, color: 'text.secondary' }}>
+                                                    <SearchIcon fontSize="small" />
+                                                </Box>
+                                                <InputBase
+                                                    placeholder="搜索物品..."
+                                                    value={searchTerm}
+                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                    sx={{
+                                                        width: '100%',
+                                                        pl: 5, pr: 2, py: 0.5,
+                                                        border: '1px solid', borderColor: 'divider', borderRadius: 1,
+                                                        fontSize: '0.875rem',
+                                                        '&:focus-within': { borderColor: 'primary.main', borderWidth: 1 }
+                                                    }}
+                                                />
                                             </Box>
-                                            <InputBase
-                                                placeholder="搜索物品..."
-                                                value={searchTerm}
-                                                onChange={(e) => setSearchTerm(e.target.value)}
-                                                sx={{
-                                                    width: '100%',
-                                                    pl: 5, pr: 2, py: 0.5,
-                                                    border: '1px solid', borderColor: 'divider', borderRadius: 1,
-                                                    fontSize: '0.875rem',
-                                                    '&:focus-within': { borderColor: 'primary.main', borderWidth: 1 }
-                                                }}
-                                            />
-                                        </Box>
+                                        </Grid>
+                                        <Grid item xs={12} md={8}>
+                                            <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 0.5 }}>
+                                                {Object.keys(categories).map(category => (
+                                                    <Chip
+                                                        key={category}
+                                                        label={category}
+                                                        onClick={() => setActiveCategory(category)}
+                                                        color={activeCategory === category ? "primary" : "default"}
+                                                        variant={activeCategory === category ? "filled" : "outlined"}
+                                                        clickable
+                                                        size="small"
+                                                        sx={{ borderRadius: 1 }}
+                                                    />
+                                                ))}
+                                            </Stack>
+                                        </Grid>
                                     </Grid>
-                                    <Grid item xs={12} md={8}>
-                                        <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 0.5 }}>
-                                            {Object.keys(categories).map(category => (
-                                                <Chip
-                                                    key={category}
-                                                    label={category}
-                                                    onClick={() => setActiveCategory(category)}
-                                                    color={activeCategory === category ? "primary" : "default"}
-                                                    variant={activeCategory === category ? "filled" : "outlined"}
-                                                    clickable
-                                                    size="small"
-                                                    sx={{ borderRadius: 1 }}
-                                                />
-                                            ))}
-                                        </Stack>
-                                    </Grid>
-                                </Grid>
-                            </Box>
-                        )}
-
-                        {/* List Header */}
-                        <Box sx={{ px: 3, py: 2, bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">
-                                {titleText}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                共 {itemQuantity} 项
-                            </Typography>
-                        </Box>
-
-                        {/* Inventory Table (Desktop) / Grid (Mobile) */}
-                        <Box sx={{ p: 0 }}>
-                            {itemsList.length > 0 ? (
-                                isMobile ? (
-                                    <Grid container spacing={2} sx={{ p: 2 }}>
-                                        {itemsList.map(item => (
-                                            <Grid item xs={12} key={item.id}>
-                                                <ItemCard
-                                                    item={item}
-                                                    updateStock={updateStockWrapper}
-                                                    deleteItem={deleteItemWrapper}
-                                                    user={user}
-                                                />
-                                            </Grid>
-                                        ))}
-                                    </Grid>
-                                ) : (
-                                    <InventoryTable
-                                        items={itemsList}
-                                        updateStock={updateStockWrapper}
-                                        deleteItem={deleteItemWrapper}
-                                        user={user}
-                                    />
-                                )
-                            ) : (
-                                <Box sx={{ py: 8, textAlign: 'center' }}>
-                                    <Typography color="text.secondary">
-                                        {isUserGoogleLoggedIn
-                                            ? (activeTab === 'restock'
-                                                ? "没有需要补货或即将过期的物品"
-                                                : "没有找到匹配的物品")
-                                            : "请先登录"}
-                                    </Typography>
                                 </Box>
                             )}
-                        </Box>
-                    </CardContent>
-                </Card>
+
+                            {/* List Header */}
+                            <Box sx={{ px: 3, py: 2, bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">
+                                        {titleText}
+                                    </Typography>
+                                    {currentList && (
+                                        <Chip
+                                            label="共享列表"
+                                            size="small"
+                                            color="primary"
+                                            variant="outlined"
+                                            sx={{ height: 20, fontSize: '0.7rem' }}
+                                        />
+                                    )}
+                                </Stack>
+                                <Stack direction="row" alignItems="center" spacing={2}>
+                                    {currentList && currentList.type === 'shared' && (
+                                        <Button
+                                            size="small"
+                                            startIcon={<Share />}
+                                            onClick={handleShareList}
+                                            sx={{ textTransform: 'none' }}
+                                        >
+                                            邀请成员
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="contained"
+                                        size="small"
+                                        startIcon={<AddIcon />}
+                                        onClick={handleAddItemClick}
+                                        disabled={!user}
+                                    >
+                                        添加物品
+                                    </Button>
+                                </Stack>
+                            </Box>
+
+                            {/* Inventory Table (Desktop) / Grid (Mobile) */}
+                            <Box sx={{ p: 0 }}>
+                                {itemsList.length > 0 ? (
+                                    isMobile ? (
+                                        <Grid container spacing={2} sx={{ p: 2 }}>
+                                            {itemsList.map(item => (
+                                                <Grid item xs={12} key={item.id}>
+                                                    <ItemCard
+                                                        item={item}
+                                                        updateStock={updateStockWrapper}
+                                                        deleteItem={deleteItemWrapper}
+                                                        markAsReplaced={markAsReplacedWrapper}
+                                                        user={user}
+                                                    />
+                                                </Grid>
+                                            ))}
+                                        </Grid>
+                                    ) : (
+                                        <InventoryTable
+                                            items={itemsList}
+                                            updateStock={updateStockWrapper}
+                                            deleteItem={deleteItemWrapper}
+                                            markAsReplaced={markAsReplacedWrapper}
+                                            user={user}
+                                        />
+                                    )
+                                ) : (
+                                    <Box sx={{ py: 8, textAlign: 'center' }}>
+                                        <Typography color="text.secondary">
+                                            {isUserGoogleLoggedIn
+                                                ? (activeTab === 'restock'
+                                                    ? "没有需要补货或即将过期的物品"
+                                                    : "没有找到匹配的物品")
+                                                : "请先登录"}
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Box>
+                        </CardContent>
+                    </Card>
+                )}
             </Stack>
         );
     };
@@ -340,10 +359,45 @@ const App = () => {
                 handleSignOut={handleSignOutWrapper}
                 setShowAuthModal={setShowAuthModal}
                 handleAddItemClick={handleAddItemClick}
+                sharedLists={sharedLists}
+                currentList={currentList}
+                setCurrentList={setCurrentList}
+                onCreateList={handleCreateList}
+                onRenameList={handleRenameList}
+                onDeleteList={handleDeleteList}
+                invitations={invitations}
+                acceptInvite={acceptInvite}
+                declineInvite={declineInvite}
+                showStatus={showStatus}
+                mainListName={mainListName}
             >
                 <StatusMessage statusMessage={statusMessage} />
 
                 {renderContent()}
+
+                {/* Settings Page */}
+                {activeTab === 'settings' && (
+                    <SettingsPage
+                        user={user}
+                        userId={userId}
+                        configError={configError}
+                        showAuthModal={showAuthModal}
+                        setShowAuthModal={setShowAuthModal}
+                        handleGoogleSignIn={handleGoogleSignInWrapper}
+                        handleSignOut={handleSignOutWrapper}
+                        showStatus={showStatus}
+                    />
+                )}
+
+                {/* Notification Page */}
+                {activeTab === 'notifications' && (
+                    <NotificationPage
+                        invitations={invitations}
+                        acceptInvite={acceptInvite}
+                        declineInvite={declineInvite}
+                        showStatus={showStatus}
+                    />
+                )}
 
                 <CustomModal
                     title="添加新物品"

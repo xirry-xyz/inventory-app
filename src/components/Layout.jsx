@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
     Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton,
     ListItem, ListItemButton, ListItemIcon, ListItemText, useTheme, useMediaQuery,
-    Avatar, Stack, Button
+    Avatar, Stack, Button, Badge
 } from '@mui/material';
 import {
     Menu as MenuIcon,
@@ -12,8 +12,20 @@ import {
     Add,
     Logout,
     Login,
-    ChevronLeft
+    ChevronLeft,
+    ListAlt,
+    Person,
+    Group,
+    MoreVert,
+    Edit,
+    Delete,
+    Dashboard as DashboardIcon,
+    Inventory as InventoryIcon,
+    Tune
 } from '@mui/icons-material';
+import { Menu, MenuItem, ListSubheader } from '@mui/material';
+import NotificationCenter from './NotificationCenter';
+import ListActionModal from './ListActionModal';
 
 const drawerWidth = 240;
 
@@ -24,7 +36,18 @@ const Layout = ({
     user,
     handleSignOut,
     setShowAuthModal,
-    handleAddItemClick
+    handleAddItemClick,
+    sharedLists,
+    currentList,
+    setCurrentList,
+    onCreateList,
+    onRenameList,
+    onDeleteList,
+    invitations,
+    acceptInvite,
+    declineInvite,
+    showStatus,
+    mainListName // New prop
 }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -34,11 +57,65 @@ const Layout = ({
         setMobileOpen(!mobileOpen);
     };
 
-    const navItems = [
-        { id: 'home', icon: <Home />, label: '主页' },
-        { id: 'restock', icon: <Notifications />, label: '补货' },
-        { id: 'settings', icon: <Settings />, label: '设置' },
-    ];
+    // Nav items removed in favor of Tabs in App.jsx
+
+    const [listModalOpen, setListModalOpen] = useState(false);
+    const [listModalMode, setListModalMode] = useState('create'); // 'create' or 'rename'
+    const [editingList, setEditingList] = useState(null);
+
+    // Menu state for list actions
+    const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+    const [selectedListForMenu, setSelectedListForMenu] = useState(null);
+
+    const handleListMenuOpen = (event, list) => {
+        event.stopPropagation();
+        setMenuAnchorEl(event.currentTarget);
+        setSelectedListForMenu(list);
+    };
+
+    const handleListMenuClose = () => {
+        setMenuAnchorEl(null);
+        setSelectedListForMenu(null);
+    };
+
+    const handleOpenCreateModal = () => {
+        setListModalMode('create');
+        setEditingList(null);
+        setListModalOpen(true);
+    };
+
+    const handleOpenRenameModal = () => {
+        if (selectedListForMenu) {
+            setListModalMode('rename');
+            setEditingList(selectedListForMenu);
+            setListModalOpen(true);
+        }
+        handleListMenuClose();
+    };
+
+    const handleDeleteListClick = () => {
+        if (selectedListForMenu) {
+            if (window.confirm(`确定要删除列表 "${selectedListForMenu.name}" 吗？`)) {
+                onDeleteList(selectedListForMenu.id);
+                if (currentList?.id === selectedListForMenu.id) {
+                    setCurrentList(null);
+                }
+            }
+        }
+        handleListMenuClose();
+    };
+
+    const handleListModalSubmit = (name, type) => {
+        if (listModalMode === 'create') {
+            onCreateList(name, type);
+        } else {
+            onRenameList(editingList.id, name);
+        }
+    };
+
+    // Separate lists
+    const privateLists = sharedLists ? sharedLists.filter(l => l.type === 'private') : [];
+    const sharedListsFiltered = sharedLists ? sharedLists.filter(l => l.type === 'shared') : [];
 
     const drawer = (
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -48,49 +125,208 @@ const Layout = ({
                 </Typography>
             </Toolbar>
             <Divider />
-            <List sx={{ flexGrow: 1, px: 2, pt: 2 }}>
-                {navItems.map((item) => (
-                    <ListItem key={item.id} disablePadding sx={{ mb: 1 }}>
-                        <ListItemButton
-                            selected={activeTab === item.id}
-                            onClick={() => {
-                                setActiveTab(item.id);
-                                if (isMobile) setMobileOpen(false);
-                            }}
-                            sx={{
-                                borderRadius: 2,
-                                '&.Mui-selected': {
-                                    bgcolor: 'primary.main',
-                                    color: 'primary.contrastText',
-                                    '&:hover': {
-                                        bgcolor: 'primary.dark',
-                                    },
-                                    '& .MuiListItemIcon-root': {
-                                        color: 'inherit',
-                                    },
-                                },
-                            }}
-                        >
-                            <ListItemIcon sx={{ minWidth: 40 }}>
-                                {item.icon}
-                            </ListItemIcon>
-                            <ListItemText primary={item.label} />
-                        </ListItemButton>
-                    </ListItem>
-                ))}
+            <List sx={{ px: 2, pt: 2 }}>
+                {/* Dashboard Navigation Removed */}
             </List>
 
-            <Box sx={{ p: 2 }}>
-                <Button
-                    variant="contained"
-                    fullWidth
-                    startIcon={<Add />}
-                    onClick={handleAddItemClick}
-                    disabled={!user}
-                    sx={{ mb: 2 }}
-                >
-                    添加物品
-                </Button>
+            {/* List Switcher */}
+            {user && (
+                <Box sx={{ px: 2, flexGrow: 1, overflowY: 'auto' }}>
+                    <ListSubheader sx={{ bgcolor: 'transparent', fontWeight: 'bold', lineHeight: '32px', mb: 1 }}>
+                        我的清单
+                    </ListSubheader>
+                    <List dense sx={{ p: 0 }}>
+                        {/* Private Lists Section */}
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 2, mb: 1, display: 'block', px: 1, fontWeight: 'bold' }}>
+                            私有列表
+                        </Typography>
+
+                        {/* Default List (Main Inventory) */}
+                        <ListItem
+                            disablePadding
+                            sx={{ mb: 0.5 }}
+                            secondaryAction={
+                                <IconButton edge="end" size="small" onClick={(e) => handleListMenuOpen(e, { id: 'default', name: mainListName || '主清单', type: 'private' })}>
+                                    <MoreVert fontSize="small" sx={{ fontSize: '1rem' }} />
+                                </IconButton>
+                            }
+                        >
+                            <ListItemButton
+                                selected={!currentList && activeTab !== 'settings' && activeTab !== 'notifications'} // Null means default private list
+                                onClick={() => {
+                                    setCurrentList(null);
+                                    setActiveTab('inventory');
+                                    if (isMobile) setMobileOpen(false);
+                                }}
+                                sx={{
+                                    borderRadius: 2,
+                                    '&.Mui-selected': {
+                                        bgcolor: 'action.selected',
+                                        borderLeft: '4px solid',
+                                        borderColor: 'primary.main',
+                                        paddingLeft: '12px'
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ minWidth: 32 }}>
+                                    <Person fontSize="small" color={!currentList ? "primary" : "action"} />
+                                </ListItemIcon>
+                                <ListItemText primary={mainListName || "主清单"} primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: !currentList ? 'bold' : 'normal' }} />
+                            </ListItemButton>
+                        </ListItem>
+
+                        {/* Other Private Lists */}
+                        {privateLists.map(list => (
+                            <ListItem
+                                key={list.id}
+                                disablePadding
+                                secondaryAction={
+                                    <IconButton edge="end" size="small" onClick={(e) => handleListMenuOpen(e, list)}>
+                                        <MoreVert fontSize="small" sx={{ fontSize: '1rem' }} />
+                                    </IconButton>
+                                }
+                                sx={{ mb: 0.5 }}
+                            >
+                                <ListItemButton
+                                    selected={currentList?.id === list.id && activeTab !== 'settings' && activeTab !== 'notifications'}
+                                    onClick={() => {
+                                        setCurrentList(list);
+                                        setActiveTab('inventory');
+                                        if (isMobile) setMobileOpen(false);
+                                    }}
+                                    sx={{
+                                        borderRadius: 2,
+                                        '&.Mui-selected': {
+                                            bgcolor: 'action.selected',
+                                            borderLeft: '4px solid',
+                                            borderColor: 'primary.main',
+                                            paddingLeft: '12px'
+                                        }
+                                    }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: 32 }}>
+                                        <ListAlt fontSize="small" color={currentList?.id === list.id ? "primary" : "action"} />
+                                    </ListItemIcon>
+                                    <ListItemText primary={list.name} primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: currentList?.id === list.id ? 'bold' : 'normal' }} />
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+
+                        {/* Shared Lists Header */}
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 2, mb: 1, display: 'block', px: 1, fontWeight: 'bold' }}>
+                            共享列表
+                        </Typography>
+                        {sharedListsFiltered.map(list => (
+                            <ListItem
+                                key={list.id}
+                                disablePadding
+                                secondaryAction={
+                                    <IconButton edge="end" size="small" onClick={(e) => handleListMenuOpen(e, list)}>
+                                        <MoreVert fontSize="small" sx={{ fontSize: '1rem' }} />
+                                    </IconButton>
+                                }
+                                sx={{ mb: 0.5 }}
+                            >
+                                <ListItemButton
+                                    selected={currentList?.id === list.id && activeTab !== 'settings' && activeTab !== 'notifications'}
+                                    onClick={() => {
+                                        setCurrentList(list);
+                                        setActiveTab('inventory');
+                                        if (isMobile) setMobileOpen(false);
+                                    }}
+                                    sx={{
+                                        borderRadius: 2,
+                                        '&.Mui-selected': {
+                                            bgcolor: 'action.selected',
+                                            borderLeft: '4px solid',
+                                            borderColor: 'primary.main',
+                                            paddingLeft: '12px'
+                                        }
+                                    }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: 32 }}>
+                                        <Group fontSize="small" color={currentList?.id === list.id ? "secondary" : "action"} />
+                                    </ListItemIcon>
+                                    <ListItemText primary={list.name} primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: currentList?.id === list.id ? 'bold' : 'normal' }} />
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+
+                        <Button
+                            size="small"
+                            startIcon={<Add />}
+                            onClick={handleOpenCreateModal}
+                            sx={{ mt: 1, textTransform: 'none', justifyContent: 'flex-start', px: 2, color: 'text.secondary' }}
+                            fullWidth
+                        >
+                            新建列表...
+                        </Button>
+                    </List>
+                </Box>
+            )}
+
+            <Divider sx={{ my: 1, mx: 2 }} />
+
+            {/* System Section */}
+            <List sx={{ px: 2, pb: 1 }}>
+                <ListSubheader sx={{ bgcolor: 'transparent', fontWeight: 'bold', lineHeight: '32px', mb: 1 }}>
+                    系统
+                </ListSubheader>
+
+                {/* Notification Center Item */}
+                <ListItem disablePadding sx={{ mb: 0.5 }}>
+                    <ListItemButton
+                        selected={activeTab === 'notifications'}
+                        onClick={() => {
+                            setActiveTab('notifications');
+                            if (isMobile) setMobileOpen(false);
+                        }}
+                        sx={{
+                            borderRadius: 2,
+                            '&.Mui-selected': {
+                                bgcolor: 'action.selected',
+                                borderLeft: '4px solid',
+                                borderColor: 'primary.main',
+                                paddingLeft: '12px'
+                            }
+                        }}
+                    >
+                        <ListItemIcon sx={{ minWidth: 32 }}>
+                            <Badge badgeContent={invitations.length} color="error" variant="dot">
+                                <Notifications fontSize="small" color={activeTab === 'notifications' ? "primary" : "action"} />
+                            </Badge>
+                        </ListItemIcon>
+                        <ListItemText primary="消息中心" primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: activeTab === 'notifications' ? 'bold' : 'normal' }} />
+                    </ListItemButton>
+                </ListItem>
+
+                <ListItem disablePadding sx={{ mb: 0.5 }}>
+                    <ListItemButton
+                        selected={activeTab === 'settings'}
+                        onClick={() => {
+                            setActiveTab('settings');
+                            if (isMobile) setMobileOpen(false);
+                        }}
+                        sx={{
+                            borderRadius: 2,
+                            '&.Mui-selected': {
+                                bgcolor: 'action.selected',
+                                borderLeft: '4px solid',
+                                borderColor: 'primary.main',
+                                paddingLeft: '12px'
+                            }
+                        }}
+                    >
+                        <ListItemIcon sx={{ minWidth: 32 }}>
+                            <Settings fontSize="small" color={activeTab === 'settings' ? "primary" : "action"} />
+                        </ListItemIcon>
+                        <ListItemText primary="设置" primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: activeTab === 'settings' ? 'bold' : 'normal' }} />
+                    </ListItemButton>
+                </ListItem>
+            </List>
+
+            <Box sx={{ px: 2, pb: 2 }}>
+                {/* Add Item Button Removed from Sidebar */}
 
                 <Divider sx={{ mb: 2 }} />
 
@@ -122,7 +358,7 @@ const Layout = ({
                     </Button>
                 )}
             </Box>
-        </Box>
+        </Box >
     );
 
     return (
@@ -149,9 +385,16 @@ const Layout = ({
                         >
                             <MenuIcon />
                         </IconButton>
-                        <Typography variant="h6" noWrap component="div" fontWeight="bold">
-                            {navItems.find(i => i.id === activeTab)?.label || 'Inventory'}
+                        <Typography variant="h6" noWrap component="div" fontWeight="bold" sx={{ flexGrow: 1 }}>
+                            Inventory App
                         </Typography>
+                        {user && (
+                            <IconButton color="inherit" onClick={() => setActiveTab('notifications')}>
+                                <Badge badgeContent={invitations.length} color="error">
+                                    <Notifications />
+                                </Badge>
+                            </IconButton>
+                        )}
                     </Toolbar>
                 </AppBar>
             )}
@@ -202,6 +445,35 @@ const Layout = ({
             >
                 {children}
             </Box>
+            {/* List Actions Menu */}
+            <Menu
+                anchorEl={menuAnchorEl}
+                open={Boolean(menuAnchorEl)}
+                onClose={handleListMenuClose}
+            >
+                <MenuItem onClick={handleOpenRenameModal}>
+                    <ListItemIcon>
+                        <Edit fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>重命名</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={handleDeleteListClick} sx={{ color: 'error.main' }}>
+                    <ListItemIcon>
+                        <Delete fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <ListItemText>删除</ListItemText>
+                </MenuItem>
+            </Menu>
+
+            {/* Create/Rename Modal */}
+            <ListActionModal
+                open={listModalOpen}
+                onClose={() => setListModalOpen(false)}
+                mode={listModalMode}
+                initialName={editingList?.name}
+                initialType={editingList?.type}
+                onSubmit={handleListModalSubmit}
+            />
         </Box>
     );
 };

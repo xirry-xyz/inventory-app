@@ -3,7 +3,7 @@ import {
     Card, CardContent, Typography, IconButton, Box, Chip, Stack, Divider
 } from '@mui/material';
 import {
-    Add, Remove, Delete, Warning, CheckCircle, EventBusy, Schedule, CalendarToday
+    Add, Remove, Delete, Warning, CheckCircle, EventBusy, Schedule, CalendarToday, Autorenew
 } from '@mui/icons-material';
 import {
     ShoppingCart, Package, Heart, Leaf, Wrench, Sprout, Cat
@@ -19,7 +19,7 @@ const categories = {
     '其他': <Sprout className="w-4 h-4" />,
 };
 
-const ItemCard = ({ item, updateStock, deleteItem, user }) => {
+const ItemCard = ({ item, updateStock, deleteItem, user, markAsReplaced }) => {
     const needsRestock = item.currentStock <= item.safetyStock;
     const isUserLoggedIn = !!user && !!user.uid;
 
@@ -40,6 +40,31 @@ const ItemCard = ({ item, updateStock, deleteItem, user }) => {
             expirationStatus = 'expired';
         } else if (daysRemaining <= 7) {
             expirationStatus = 'warning';
+        }
+    }
+
+    // Periodic Logic
+    let periodicStatus = null; // good, warning, expired
+    let periodicDaysRemaining = null;
+
+    if (item.isPeriodic && item.lastReplaced && item.replacementCycle) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const lastDate = new Date(item.lastReplaced);
+        lastDate.setHours(0, 0, 0, 0);
+
+        const nextDate = new Date(lastDate);
+        nextDate.setDate(nextDate.getDate() + Number(item.replacementCycle));
+
+        const diffTime = nextDate - today;
+        periodicDaysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (periodicDaysRemaining < 0) {
+            periodicStatus = 'expired';
+        } else if (periodicDaysRemaining <= 7) {
+            periodicStatus = 'warning';
+        } else {
+            periodicStatus = 'good';
         }
     }
 
@@ -104,6 +129,39 @@ const ItemCard = ({ item, updateStock, deleteItem, user }) => {
                                 expirationStatus === 'warning' ? `${daysRemaining} 天后过期` :
                                     `有效期: ${item.expirationDate}`}
                         </Typography>
+                    </Box>
+                )}
+
+                {/* Periodic Info */}
+                {item.isPeriodic && (
+                    <Box
+                        sx={{
+                            mb: 2, p: 1, borderRadius: 1,
+                            bgcolor: periodicStatus === 'expired' ? '#FEF2F2' :
+                                periodicStatus === 'warning' ? '#FFFBEB' : '#F0FDF4',
+                            color: periodicStatus === 'expired' ? '#991B1B' :
+                                periodicStatus === 'warning' ? '#92400E' : '#166534',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            fontSize: '0.8rem'
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Autorenew sx={{ fontSize: 16 }} />
+                            <Typography variant="caption" fontWeight="medium">
+                                {periodicStatus === 'expired' ? `超期 ${Math.abs(periodicDaysRemaining)} 天` :
+                                    periodicStatus === 'warning' ? `${periodicDaysRemaining} 天后更换` :
+                                        `${periodicDaysRemaining} 天后更换`}
+                            </Typography>
+                        </Box>
+                        <IconButton
+                            size="small"
+                            onClick={() => markAsReplaced(item.id)}
+                            disabled={!isUserLoggedIn}
+                            title="标记为已更换"
+                            sx={{ p: 0.5, color: 'inherit' }}
+                        >
+                            <CheckCircle sx={{ fontSize: 16 }} />
+                        </IconButton>
                     </Box>
                 )}
 
