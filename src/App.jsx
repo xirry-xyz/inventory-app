@@ -13,11 +13,12 @@ import Layout from './components/Layout';
 import CustomModal from './components/CustomModal';
 import AuthModal from './components/AuthModal';
 import ItemForm from './components/ItemForm';
-import ItemCard from './components/ItemCard';
+import InventoryTable from './components/InventoryTable';
+import ItemCard from './components/ItemCard'; // Keep for mobile view if needed, or just use table
 import StatusMessage from './components/StatusMessage';
 
 import {
-    Box, Typography, Grid, Paper, InputBase, IconButton, Button, Chip, Stack, CircularProgress, Card, CardContent, Divider
+    Box, Typography, Grid, Paper, InputBase, IconButton, Button, Chip, Stack, CircularProgress, Card, CardContent, Divider, useMediaQuery
 } from '@mui/material';
 import { Search as SearchIcon, Add as AddIcon, CheckCircle, Warning, Error as ErrorIcon } from '@mui/icons-material';
 
@@ -125,6 +126,8 @@ const App = () => {
         return matchesSearch && matchesCategory;
     });
 
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
     // Render Content
     const renderContent = () => {
         if (activeTab === 'settings') {
@@ -133,13 +136,6 @@ const App = () => {
                 <Card>
                     <CardContent sx={{ p: 4 }}>
                         <Typography variant="h6" fontWeight="bold" gutterBottom>用户与应用设置</Typography>
-                        <Button
-                            startIcon={<Home />}
-                            onClick={() => setActiveTab('home')}
-                            sx={{ mb: 3, display: { xs: 'none', sm: 'inline-flex' } }}
-                        >
-                            返回主页
-                        </Button>
                         <Stack spacing={3}>
                             <Box sx={{ p: 3, bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>登录状态</Typography>
@@ -194,53 +190,37 @@ const App = () => {
 
         return (
             <Stack spacing={4}>
-                {/* Dashboard / Stats Card */}
-                <Card>
-                    <CardContent sx={{ p: 3 }}>
-                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={2}>
-                            <Box>
-                                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                                    库存概览
+                {/* Dashboard Stats */}
+                <Grid container spacing={3}>
+                    <Grid item xs={12} sm={6} md={4}>
+                        <Card>
+                            <CardContent>
+                                <Typography color="text.secondary" gutterBottom>总物品数</Typography>
+                                <Typography variant="h4" fontWeight="bold">{inventory.length}</Typography>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                        <Card>
+                            <CardContent>
+                                <Typography color="text.secondary" gutterBottom>需补货</Typography>
+                                <Typography variant="h4" fontWeight="bold" color={itemsToRestock.length > 0 ? "error.main" : "text.primary"}>
+                                    {itemsToRestock.length}
                                 </Typography>
-                                <Stack direction="row" spacing={2} alignItems="center">
-                                    {(itemsToRestock.length > 0 || itemsExpiringSoon.length > 0) && isUserGoogleLoggedIn ? (
-                                        <>
-                                            {itemsToRestock.length > 0 && (
-                                                <Chip
-                                                    label={`${itemsToRestock.length} 个缺货`}
-                                                    color="error"
-                                                    size="small"
-                                                    sx={{ fontWeight: 'bold' }}
-                                                />
-                                            )}
-                                            {itemsExpiringSoon.length > 0 && (
-                                                <Chip
-                                                    label={`${itemsExpiringSoon.length} 个即将过期`}
-                                                    color="warning"
-                                                    size="small"
-                                                    sx={{ fontWeight: 'bold' }}
-                                                />
-                                            )}
-                                        </>
-                                    ) : (
-                                        <Typography variant="body2" color={isUserGoogleLoggedIn ? "success.main" : "text.secondary"}>
-                                            {isUserGoogleLoggedIn ? "所有物品库存充足" : "请登录查看状态"}
-                                        </Typography>
-                                    )}
-                                </Stack>
-                            </Box>
-                            <Button
-                                variant="contained"
-                                startIcon={<AddIcon />}
-                                onClick={handleAddItemClick}
-                                disabled={!isUserGoogleLoggedIn}
-                                sx={{ display: { xs: 'none', sm: 'flex' } }}
-                            >
-                                添加物品
-                            </Button>
-                        </Stack>
-                    </CardContent>
-                </Card>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                        <Card>
+                            <CardContent>
+                                <Typography color="text.secondary" gutterBottom>即将过期</Typography>
+                                <Typography variant="h4" fontWeight="bold" color={itemsExpiringSoon.length > 0 ? "warning.main" : "text.primary"}>
+                                    {itemsExpiringSoon.length}
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                </Grid>
 
                 {/* Filters & Content */}
                 <Card>
@@ -298,34 +278,41 @@ const App = () => {
                             </Typography>
                         </Box>
 
-                        {/* Inventory Grid */}
-                        <Box sx={{ p: 3 }}>
-                            <Grid container spacing={2}>
-                                {itemsList.length > 0 ? (
-                                    itemsList.map(item => (
-                                        <Grid item xs={12} sm={6} lg={4} key={item.id}>
-                                            <ItemCard
-                                                item={item}
-                                                updateStock={updateStockWrapper}
-                                                deleteItem={deleteItemWrapper}
-                                                user={user}
-                                            />
-                                        </Grid>
-                                    ))
-                                ) : (
-                                    <Grid item xs={12}>
-                                        <Box sx={{ py: 8, textAlign: 'center' }}>
-                                            <Typography color="text.secondary">
-                                                {isUserGoogleLoggedIn
-                                                    ? (activeTab === 'restock'
-                                                        ? "没有需要补货或即将过期的物品"
-                                                        : "没有找到匹配的物品")
-                                                    : "请先登录"}
-                                            </Typography>
-                                        </Box>
+                        {/* Inventory Table (Desktop) / Grid (Mobile) */}
+                        <Box sx={{ p: 0 }}>
+                            {itemsList.length > 0 ? (
+                                isMobile ? (
+                                    <Grid container spacing={2} sx={{ p: 2 }}>
+                                        {itemsList.map(item => (
+                                            <Grid item xs={12} key={item.id}>
+                                                <ItemCard
+                                                    item={item}
+                                                    updateStock={updateStockWrapper}
+                                                    deleteItem={deleteItemWrapper}
+                                                    user={user}
+                                                />
+                                            </Grid>
+                                        ))}
                                     </Grid>
-                                )}
-                            </Grid>
+                                ) : (
+                                    <InventoryTable
+                                        items={itemsList}
+                                        updateStock={updateStockWrapper}
+                                        deleteItem={deleteItemWrapper}
+                                        user={user}
+                                    />
+                                )
+                            ) : (
+                                <Box sx={{ py: 8, textAlign: 'center' }}>
+                                    <Typography color="text.secondary">
+                                        {isUserGoogleLoggedIn
+                                            ? (activeTab === 'restock'
+                                                ? "没有需要补货或即将过期的物品"
+                                                : "没有找到匹配的物品")
+                                            : "请先登录"}
+                                    </Typography>
+                                </Box>
+                            )}
                         </Box>
                     </CardContent>
                 </Card>
