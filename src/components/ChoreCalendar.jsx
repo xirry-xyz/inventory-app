@@ -56,7 +56,7 @@ const ChoreCalendar = ({ chores }) => {
 
         // Empty cells for days before start of month
         for (let i = 0; i < firstDay; i++) {
-            calendarDays.push(<Grid item xs={1} key={`empty-${i}`} />);
+            calendarDays.push(<Box key={`empty-${i}`} />);
         }
 
         // Days of the month
@@ -68,7 +68,7 @@ const ChoreCalendar = ({ chores }) => {
             const isSelected = selectedDate && selectedDate.toDateString() === dateKey;
 
             calendarDays.push(
-                <Grid item xs={1} key={day} sx={{ textAlign: 'center', mb: 1 }}>
+                <Box key={day} sx={{ textAlign: 'center', mb: 1 }}>
                     <Box
                         onClick={() => handleDateClick(day)}
                         sx={{
@@ -106,7 +106,7 @@ const ChoreCalendar = ({ chores }) => {
                             />
                         )}
                     </Box>
-                </Grid>
+                </Box>
             );
         }
 
@@ -132,20 +132,20 @@ const ChoreCalendar = ({ chores }) => {
             </Stack>
 
             {/* Days of Week */}
-            <Grid container columns={7} sx={{ mb: 1 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 1 }}>
                 {DAYS_OF_WEEK.map(day => (
-                    <Grid item xs={1} key={day} sx={{ textAlign: 'center' }}>
+                    <Box key={day} sx={{ textAlign: 'center' }}>
                         <Typography variant="caption" color="text.secondary">
                             {day}
                         </Typography>
-                    </Grid>
+                    </Box>
                 ))}
-            </Grid>
+            </Box>
 
             {/* Calendar Grid */}
-            <Grid container columns={7}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
                 {renderCalendarDays()}
-            </Grid>
+            </Box>
 
             {/* Selected Date Details */}
             {selectedDate && (
