@@ -33,9 +33,10 @@ const getInventoryCollectionPath = (userId, currentList) => {
     return `artifacts/${appId}/users/${userId}/inventory`;
 }
 
-export const useInventory = (user, configError, isAuthReady, setConfigError, currentList) => {
+export const useInventory = (user, configError, isAuthReady, currentList) => {
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         if (configError || !isAuthReady || !db || !user || !user.uid) {
@@ -93,15 +94,15 @@ export const useInventory = (user, configError, isAuthReady, setConfigError, cur
             setLoading(false);
         }, (err) => {
             if (err.code === 'permission-denied') {
-                setConfigError(`数据读取失败: Firestore 权限被拒绝。请确保您的安全规则允许已认证的用户访问。`);
+                setError(`数据读取失败: Firestore 权限被拒绝。请确保您的安全规则允许已认证的用户访问。`);
             } else {
-                setConfigError(`数据同步错误: ${err.message}`);
+                setError(`数据同步错误: ${err.message}`);
             }
             setLoading(false);
         });
 
         return () => unsubscribe();
-    }, [isAuthReady, user, db, configError, setConfigError, currentList]);
+    }, [isAuthReady, user, db, configError, currentList]);
 
     const addItem = useCallback(async (newItem, showStatus) => {
         const name = newItem.name.trim();
@@ -218,6 +219,7 @@ export const useInventory = (user, configError, isAuthReady, setConfigError, cur
         updateStock,
         updateStock,
         deleteItem,
-        markAsReplaced
+        markAsReplaced,
+        error
     };
 };

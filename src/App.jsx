@@ -52,8 +52,8 @@ const App = () => {
     const [currentList, setCurrentList] = useState(null); // null = private, object = shared
 
     const {
-        inventory, loading, addItem, updateStock, deleteItem, markAsReplaced
-    } = useInventory(user, configError, isAuthReady, setConfigError, currentList);
+        inventory, loading, addItem, updateStock, deleteItem, markAsReplaced, error: inventoryError
+    } = useInventory(user, configError, isAuthReady, currentList);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('全部');
@@ -380,7 +380,7 @@ const App = () => {
                     <SettingsPage
                         user={user}
                         userId={userId}
-                        configError={configError}
+                        configError={configError || inventoryError}
                         showAuthModal={showAuthModal}
                         setShowAuthModal={setShowAuthModal}
                         handleGoogleSignIn={handleGoogleSignInWrapper}
