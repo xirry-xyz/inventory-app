@@ -56,7 +56,7 @@ const ChoreCalendar = ({ chores }) => {
 
         // Empty cells for days before start of month
         for (let i = 0; i < firstDay; i++) {
-            calendarDays.push(<Grid item xs={1.7} key={`empty-${i}`} />);
+            calendarDays.push(<Grid item xs={1} key={`empty-${i}`} />);
         }
 
         // Days of the month
@@ -68,7 +68,7 @@ const ChoreCalendar = ({ chores }) => {
             const isSelected = selectedDate && selectedDate.toDateString() === dateKey;
 
             calendarDays.push(
-                <Grid item xs={1.7} key={day} sx={{ textAlign: 'center', mb: 1 }}>
+                <Grid item xs={1} key={day} sx={{ textAlign: 'center', mb: 1 }}>
                     <Box
                         onClick={() => handleDateClick(day)}
                         sx={{
@@ -132,9 +132,9 @@ const ChoreCalendar = ({ chores }) => {
             </Stack>
 
             {/* Days of Week */}
-            <Grid container columns={11.9} sx={{ mb: 1 }}>
+            <Grid container columns={7} sx={{ mb: 1 }}>
                 {DAYS_OF_WEEK.map(day => (
-                    <Grid item xs={1.7} key={day} sx={{ textAlign: 'center' }}>
+                    <Grid item xs={1} key={day} sx={{ textAlign: 'center' }}>
                         <Typography variant="caption" color="text.secondary">
                             {day}
                         </Typography>
@@ -143,7 +143,7 @@ const ChoreCalendar = ({ chores }) => {
             </Grid>
 
             {/* Calendar Grid */}
-            <Grid container columns={11.9}>
+            <Grid container columns={7}>
                 {renderCalendarDays()}
             </Grid>
 
