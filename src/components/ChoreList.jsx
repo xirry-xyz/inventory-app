@@ -20,7 +20,6 @@ const ChoreList = ({ chores, onComplete, onDelete, onEdit, user }) => {
 
         if (daysRemaining < 0) return { label: `逾期 ${Math.abs(daysRemaining)} 天`, color: 'error', days: daysRemaining };
         if (daysRemaining === 0) return { label: '今天', color: 'warning', days: 0 };
-        if (daysRemaining <= 2) return { label: `${daysRemaining} 天后`, color: 'warning', days: daysRemaining };
         return { label: `${daysRemaining} 天后`, color: 'success', days: daysRemaining };
     };
 
