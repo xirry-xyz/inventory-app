@@ -7,6 +7,7 @@ import { db, appId } from '../firebase';
 export const useSharedLists = (user) => {
     const [sharedLists, setSharedLists] = useState([]);
     const [loadingLists, setLoadingLists] = useState(true);
+    const [loadingPreferences, setLoadingPreferences] = useState(true);
     const [mainListName, setMainListName] = useState('主清单'); // State for Main List Name
     const [defaultListId, setDefaultListId] = useState(null); // State for Default List ID
 
@@ -57,6 +58,7 @@ export const useSharedLists = (user) => {
                 if (data.mainListName) setMainListName(data.mainListName);
                 if (data.defaultListId) setDefaultListId(data.defaultListId);
             }
+            setLoadingPreferences(false);
         });
 
         return () => {
@@ -203,7 +205,9 @@ export const useSharedLists = (user) => {
 
     return {
         sharedLists,
+        sharedLists,
         loadingLists,
+        loadingPreferences,
         createList,
         renameList,
         deleteList,

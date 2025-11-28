@@ -49,7 +49,7 @@ const App = () => {
     } = useAuth();
 
     // Shared Lists & Invitations Hooks
-    const { sharedLists, loadingLists, createList, renameList, deleteList, mainListName, defaultListId, setDefaultList } = useSharedLists(user);
+    const { sharedLists, loadingLists, loadingPreferences, createList, renameList, deleteList, mainListName, defaultListId, setDefaultList } = useSharedLists(user);
     const { invitations, sendInvite, acceptInvite, declineInvite } = useInvitations(user);
 
     // Local State
@@ -67,8 +67,8 @@ const App = () => {
             return;
         }
 
-        // If user is logged in, wait for lists to load
-        if (loadingLists) return;
+        // If user is logged in, wait for lists and preferences to load
+        if (loadingLists || loadingPreferences) return;
 
         if (!isRestored) {
             if (defaultListId) {
@@ -83,7 +83,7 @@ const App = () => {
             }
             setIsRestored(true);
         }
-    }, [isAuthReady, user, loadingLists, sharedLists, isRestored, defaultListId]);
+    }, [isAuthReady, user, loadingLists, loadingPreferences, sharedLists, isRestored, defaultListId]);
 
     const {
         inventory, loading, addItem, updateStock, deleteItem, markAsReplaced, error: inventoryError
