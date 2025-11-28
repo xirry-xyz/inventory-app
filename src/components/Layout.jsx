@@ -23,7 +23,7 @@ import {
     Inventory as InventoryIcon,
     Tune
 } from '@mui/icons-material';
-import { Menu, MenuItem, ListSubheader } from '@mui/material';
+import { Menu, MenuItem, ListSubheader, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import NotificationCenter from './NotificationCenter';
 import ListActionModal from './ListActionModal';
 
@@ -63,6 +63,11 @@ const Layout = ({
     const [listModalMode, setListModalMode] = useState('create'); // 'create' or 'rename'
     const [editingList, setEditingList] = useState(null);
 
+    // Delete Modal State
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteMessage, setDeleteMessage] = useState('');
+    const [listToDelete, setListToDelete] = useState(null);
+
     // Menu state for list actions
     const [menuAnchorEl, setMenuAnchorEl] = useState(null);
     const [selectedListForMenu, setSelectedListForMenu] = useState(null);
@@ -95,14 +100,32 @@ const Layout = ({
 
     const handleDeleteListClick = () => {
         if (selectedListForMenu) {
-            if (window.confirm(`确定要删除列表 "${selectedListForMenu.name}" 吗？`)) {
-                onDeleteList(selectedListForMenu.id);
-                if (currentList?.id === selectedListForMenu.id) {
-                    setCurrentList(null);
+            if (selectedListForMenu.id === 'default') {
+                const privateListsCount = sharedLists ? sharedLists.filter(l => l.type === 'private').length : 0;
+                if (privateListsCount === 0) {
+                    showStatus('无法删除：这是您唯一的私有列表。', true);
+                    handleListMenuClose();
+                    return;
                 }
+                setDeleteMessage('确定要清空并删除主清单吗？注意：这会清空主清单中的所有物品。');
+            } else {
+                setDeleteMessage(`确定要删除列表 "${selectedListForMenu.name}" 吗？`);
             }
+            setListToDelete(selectedListForMenu);
+            setDeleteModalOpen(true);
         }
         handleListMenuClose();
+    };
+
+    const handleConfirmDelete = () => {
+        if (listToDelete) {
+            onDeleteList(listToDelete.id);
+            if (currentList?.id === listToDelete.id) {
+                setCurrentList(null);
+            }
+        }
+        setDeleteModalOpen(false);
+        setListToDelete(null);
     };
 
     const handleListModalSubmit = (name, type) => {
@@ -474,6 +497,41 @@ const Layout = ({
                 initialType={editingList?.type}
                 onSubmit={handleListModalSubmit}
             />
+
+            {/* Delete Confirmation Modal */}
+            <Dialog
+                open={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                PaperProps={{
+                    sx: { borderRadius: 2, minWidth: 300 }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 'bold', pb: 1 }}>
+                    确认删除
+                </DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        {deleteMessage}
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button
+                        onClick={() => setDeleteModalOpen(false)}
+                        sx={{ color: 'text.secondary', borderRadius: 2 }}
+                    >
+                        取消
+                    </Button>
+                    <Button
+                        onClick={handleConfirmDelete}
+                        variant="contained"
+                        color="error"
+                        disableElevation
+                        sx={{ borderRadius: 2 }}
+                    >
+                        删除
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

@@ -140,7 +140,8 @@ export const useSharedLists = (user) => {
             // User said: "When multiple private lists exist, allow delete."
             // If we delete it, we should probably just clear the items in `users/{uid}/inventory`.
 
-            if (!window.confirm('确定要清空并删除主清单吗？注意：这会清空主清单中的所有物品。')) return false;
+            // Confirmation is now handled in UI layer
+            // if (!window.confirm('确定要清空并删除主清单吗？注意：这会清空主清单中的所有物品。')) return false;
 
             try {
                 // We need to delete all documents in the inventory collection
