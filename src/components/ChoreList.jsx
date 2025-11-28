@@ -39,16 +39,16 @@ const ChoreList = ({ chores, onComplete, onDelete, onEdit, user }) => {
             {chores.map(chore => {
                 const status = getStatus(chore.nextDue);
                 return (
-                    <Grid item xs={12} sm={6} md={4} key={chore.id}>
-                        <Card variant="outlined" sx={{ borderRadius: 2, position: 'relative' }}>
-                            <CardContent>
-                                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={chore.id}>
+                        <Card variant="outlined" sx={{ borderRadius: 2, position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                            <CardContent sx={{ flexGrow: 1, p: 3, '&:last-child': { pb: 3 } }}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
                                     <Box>
-                                        <Typography variant="h6" fontWeight="bold">
+                                        <Typography variant="h6" fontWeight="bold" sx={{ lineHeight: 1.3 }}>
                                             {chore.name}
                                         </Typography>
-                                        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5, color: 'text.secondary' }}>
-                                            <EventRepeat fontSize="small" />
+                                        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 1, color: 'text.secondary' }}>
+                                            <EventRepeat fontSize="small" sx={{ fontSize: '1rem' }} />
                                             <Typography variant="body2">
                                                 每 {chore.frequency} 天
                                             </Typography>
@@ -59,14 +59,15 @@ const ChoreList = ({ chores, onComplete, onDelete, onEdit, user }) => {
                                         color={status.color}
                                         size="small"
                                         variant={status.color === 'success' ? 'outlined' : 'filled'}
+                                        sx={{ height: 24, fontSize: '0.75rem', fontWeight: 'bold' }}
                                     />
                                 </Stack>
 
-                                <Typography variant="caption" display="block" sx={{ mt: 2, mb: 2, color: 'text.secondary' }}>
+                                <Typography variant="caption" display="block" sx={{ mt: 3, mb: 3, color: 'text.secondary' }}>
                                     上次完成: {chore.lastCompleted ? new Date(chore.lastCompleted).toLocaleDateString() : '从未'}
                                 </Typography>
 
-                                <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center" sx={{ mt: 'auto' }}>
                                     <IconButton
                                         size="small"
                                         onClick={() => onDelete(chore.id)}
@@ -75,7 +76,6 @@ const ChoreList = ({ chores, onComplete, onDelete, onEdit, user }) => {
                                     >
                                         <Delete fontSize="small" />
                                     </IconButton>
-                                    {/* Edit button can be added here later */}
                                     <Button
                                         variant="contained"
                                         size="small"
@@ -83,8 +83,8 @@ const ChoreList = ({ chores, onComplete, onDelete, onEdit, user }) => {
                                         onClick={() => onComplete(chore)}
                                         disabled={!user}
                                         disableElevation
-                                        color={status.color === 'success' ? 'primary' : status.color} // Use status color for urgency
-                                        sx={{ borderRadius: 2 }}
+                                        color={status.color === 'success' ? 'primary' : status.color}
+                                        sx={{ borderRadius: 2, px: 2 }}
                                     >
                                         完成
                                     </Button>
