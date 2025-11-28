@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-    collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, setDoc
+    collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, setDoc, collectionGroup
 } from 'firebase/firestore';
 import { db, appId } from '../firebase';
 
@@ -19,12 +19,11 @@ export const useSharedLists = (user) => {
             return;
         }
 
-        // Currently only fetching user's own lists to avoid permission/index issues
-        const listsPath = getUserListsPath(user.uid);
-
+        // Fetch ALL lists where the user is a member (owned or shared)
+        // We use collectionGroup to find lists across all users
         const q = query(
-            collection(db, listsPath)
-            // We can add ordering here if needed
+            collectionGroup(db, 'lists'),
+            where('members', 'array-contains', user.uid)
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -32,9 +31,9 @@ export const useSharedLists = (user) => {
                 const data = doc.data();
                 return {
                     id: doc.id,
+                    path: doc.ref.path, // Store path for updates/deletes
                     ...data,
                     // Use stored type, default to 'shared' if missing (backward compatibility)
-                    // Fallback to inference only if absolutely necessary, but we prefer stored type now
                     type: data.type || ((data.members && data.members.length > 1) ? 'shared' : 'private')
                 };
             });
@@ -42,6 +41,9 @@ export const useSharedLists = (user) => {
             setLoadingLists(false);
         }, (error) => {
             console.error("Error fetching shared lists:", error);
+            if (error.message.includes('index')) {
+                console.error("INDEX REQUIRED: Please check the console link above to create the index for 'lists' collectionGroup.");
+            }
             setLoadingLists(false);
         });
 
@@ -95,8 +97,12 @@ export const useSharedLists = (user) => {
                 return true;
             }
 
-            // Assuming we are editing our own list for now
-            const listRef = doc(db, getUserListsPath(user.uid), listId);
+            // Find the list in our local state to get its path
+            const list = sharedLists.find(l => l.id === listId);
+            if (!list) throw new Error("List not found locally");
+
+            // Use the stored path (works for both owned and shared lists if we have permission)
+            const listRef = doc(db, list.path);
             await updateDoc(listRef, {
                 name: newName,
                 updatedAt: serverTimestamp()
@@ -158,8 +164,12 @@ export const useSharedLists = (user) => {
         }
 
         try {
-            // Assuming we are deleting our own list for now
-            const listRef = doc(db, getUserListsPath(user.uid), listId);
+            // Find the list in our local state to get its path
+            const list = sharedLists.find(l => l.id === listId);
+            if (!list) throw new Error("List not found locally");
+
+            // Only owner can delete (enforced by rules, but good to check here or handle error)
+            const listRef = doc(db, list.path);
             await deleteDoc(listRef);
             showStatus('列表已删除');
             return true;
