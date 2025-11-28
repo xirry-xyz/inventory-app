@@ -35,66 +35,64 @@ const ChoreList = ({ chores, onComplete, onDelete, onEdit, user }) => {
     }
 
     return (
-        <Grid container spacing={2}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 3 }}>
             {chores.map(chore => {
                 const status = getStatus(chore.nextDue);
                 return (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={chore.id}>
-                        <Card variant="outlined" sx={{ borderRadius: 2, position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                            <CardContent sx={{ flexGrow: 1, p: 3, '&:last-child': { pb: 3 } }}>
-                                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                                    <Box>
-                                        <Typography variant="h6" fontWeight="bold" sx={{ lineHeight: 1.3 }}>
-                                            {chore.name}
+                    <Card key={chore.id} variant="outlined" sx={{ borderRadius: 2, position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        <CardContent sx={{ flexGrow: 1, p: 3, '&:last-child': { pb: 3 } }}>
+                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                                <Box>
+                                    <Typography variant="h6" fontWeight="bold" sx={{ lineHeight: 1.3 }}>
+                                        {chore.name}
+                                    </Typography>
+                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 1, color: 'text.secondary' }}>
+                                        <EventRepeat fontSize="small" sx={{ fontSize: '1rem' }} />
+                                        <Typography variant="body2">
+                                            每 {chore.frequency} 天
                                         </Typography>
-                                        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 1, color: 'text.secondary' }}>
-                                            <EventRepeat fontSize="small" sx={{ fontSize: '1rem' }} />
-                                            <Typography variant="body2">
-                                                每 {chore.frequency} 天
-                                            </Typography>
-                                        </Stack>
-                                    </Box>
-                                    <Chip
-                                        label={status.label}
-                                        color={status.color}
-                                        size="small"
-                                        variant={status.color === 'success' ? 'outlined' : 'filled'}
-                                        sx={{ height: 24, fontSize: '0.75rem', fontWeight: 'bold' }}
-                                    />
-                                </Stack>
+                                    </Stack>
+                                </Box>
+                                <Chip
+                                    label={status.label}
+                                    color={status.color}
+                                    size="small"
+                                    variant={status.color === 'success' ? 'outlined' : 'filled'}
+                                    sx={{ height: 24, fontSize: '0.75rem', fontWeight: 'bold' }}
+                                />
+                            </Stack>
 
-                                <Typography variant="caption" display="block" sx={{ mt: 3, mb: 3, color: 'text.secondary' }}>
-                                    上次完成: {chore.lastCompleted ? new Date(chore.lastCompleted).toLocaleDateString() : '从未'}
-                                </Typography>
+                            <Typography variant="caption" display="block" sx={{ mt: 3, mb: 3, color: 'text.secondary' }}>
+                                上次完成: {chore.lastCompleted ? new Date(chore.lastCompleted).toLocaleDateString() : '从未'}
+                            </Typography>
 
-                                <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center" sx={{ mt: 'auto' }}>
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => onDelete(chore.id)}
-                                        disabled={!user}
-                                        sx={{ color: 'text.disabled' }}
-                                    >
-                                        <Delete fontSize="small" />
-                                    </IconButton>
-                                    <Button
-                                        variant="contained"
-                                        size="small"
-                                        startIcon={<CheckCircle />}
-                                        onClick={() => onComplete(chore)}
-                                        disabled={!user}
-                                        disableElevation
-                                        color={status.color === 'success' ? 'primary' : status.color}
-                                        sx={{ borderRadius: 2, px: 2 }}
-                                    >
-                                        完成
-                                    </Button>
-                                </Stack>
-                            </CardContent>
-                        </Card>
-                    </Grid>
+                            <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center" sx={{ mt: 'auto' }}>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => onDelete(chore.id)}
+                                    disabled={!user}
+                                    sx={{ color: 'text.disabled' }}
+                                >
+                                    <Delete fontSize="small" />
+                                </IconButton>
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    startIcon={<CheckCircle />}
+                                    onClick={() => onComplete(chore)}
+                                    disabled={!user}
+                                    disableElevation
+                                    color={status.color === 'success' ? 'primary' : status.color}
+                                    sx={{ borderRadius: 2, px: 2 }}
+                                >
+                                    完成
+                                </Button>
+                            </Stack>
+                        </CardContent>
+                    </Card>
                 );
             })}
-        </Grid>
+        </Box>
     );
 };
 
