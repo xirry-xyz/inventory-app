@@ -39,9 +39,17 @@ export const useInventory = (user, configError, isAuthReady, currentList) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        if (configError || !isAuthReady || !db || !user || !user.uid) {
+        // Strictly wait for Auth to be ready and User to be logged in with a UID
+        if (configError || !isAuthReady || !db) {
             setInventory([]);
-            if (isAuthReady) setLoading(false);
+            // Do not set loading to false yet if we are just waiting for auth
+            if (configError) setLoading(false);
+            return;
+        }
+
+        if (!user || !user.uid) {
+            setInventory([]);
+            setLoading(false);
             return;
         }
 

@@ -25,7 +25,10 @@ export const useInvitations = (user) => {
             where("status", "==", "pending")
         );
 
+        console.log("useInvitations: Listening for invites for:", user.email);
+
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            console.log("useInvitations: Snapshot received. Docs:", snapshot.docs.length);
             const invites = snapshot.docs.map(doc => ({
                 id: doc.id,
                 path: doc.ref.path, // Store reference path to update it later
@@ -35,6 +38,10 @@ export const useInvitations = (user) => {
             setLoadingInvites(false);
         }, (error) => {
             console.error("Error fetching invitations:", error);
+            // Check for index requirement
+            if (error.message.includes('index')) {
+                console.error("INDEX REQUIRED: Please check the console link above to create the index.");
+            }
             setLoadingInvites(false);
         });
 
