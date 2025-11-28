@@ -84,7 +84,8 @@ export const useInvitations = (user) => {
             // Path: users/{inviterId}/lists/{listId}
             const listRef = doc(db, getUserListsPath(invite.inviterId), listId);
             await updateDoc(listRef, {
-                members: arrayUnion(user.uid)
+                members: arrayUnion(user.uid),
+                memberEmails: arrayUnion(user.email)
             });
 
             // 2. Update invite status to accepted

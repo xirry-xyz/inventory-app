@@ -257,18 +257,25 @@ const App = () => {
 
                             {/* List Header */}
                             <Box sx={{ px: 3, py: 2, bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">
-                                        {titleText}
-                                    </Typography>
-                                    {currentList && (
-                                        <Chip
-                                            label="共享列表"
-                                            size="small"
-                                            color="primary"
-                                            variant="outlined"
-                                            sx={{ height: 20, fontSize: '0.7rem' }}
-                                        />
+                                <Stack direction="column" spacing={0.5}>
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">
+                                            {titleText}
+                                        </Typography>
+                                        {currentList && (
+                                            <Chip
+                                                label="共享列表"
+                                                size="small"
+                                                color="primary"
+                                                variant="outlined"
+                                                sx={{ height: 20, fontSize: '0.7rem' }}
+                                            />
+                                        )}
+                                    </Stack>
+                                    {currentList && currentList.type === 'shared' && (
+                                        <Typography variant="caption" color="text.secondary">
+                                            创建者: {currentList.ownerEmail} | 成员: {currentList.memberEmails ? currentList.memberEmails.join(', ') : '加载中...'}
+                                        </Typography>
                                     )}
                                 </Stack>
                                 <Stack direction="row" alignItems="center" spacing={2}>

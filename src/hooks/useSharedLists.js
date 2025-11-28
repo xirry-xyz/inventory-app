@@ -72,6 +72,7 @@ export const useSharedLists = (user) => {
                 ownerId: user.uid,
                 ownerEmail: user.email,
                 members: [user.uid], // Owner is automatically a member
+                memberEmails: [user.email], // Store emails for display
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
