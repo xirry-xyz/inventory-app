@@ -8,6 +8,7 @@ export const useSharedLists = (user) => {
     const [sharedLists, setSharedLists] = useState([]);
     const [loadingLists, setLoadingLists] = useState(true);
     const [mainListName, setMainListName] = useState('主清单'); // State for Main List Name
+    const [defaultListId, setDefaultListId] = useState(null); // State for Default List ID
 
     // Helper to get the user's lists collection path
     const getUserListsPath = (uid) => `artifacts/${appId}/users/${uid}/lists`;
@@ -48,11 +49,13 @@ export const useSharedLists = (user) => {
             setLoadingLists(false);
         });
 
-        // Also fetch Main List Name preference
+        // Also fetch Main List Name preference and Default List ID
         const prefRef = doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'preferences');
         const unsubscribePref = onSnapshot(prefRef, (docSnap) => {
-            if (docSnap.exists() && docSnap.data().mainListName) {
-                setMainListName(docSnap.data().mainListName);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data.mainListName) setMainListName(data.mainListName);
+                if (data.defaultListId) setDefaultListId(data.defaultListId);
             }
         });
 
@@ -61,6 +64,21 @@ export const useSharedLists = (user) => {
             unsubscribePref();
         };
     }, [user]);
+
+    const setDefaultList = async (listId, showStatus) => {
+        if (!user || !user.uid) return;
+        try {
+            const prefRef = doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'preferences');
+            const { setDoc } = await import('firebase/firestore');
+            await setDoc(prefRef, { defaultListId: listId }, { merge: true });
+            showStatus('已设置为默认列表');
+            return true;
+        } catch (error) {
+            console.error("Error setting default list:", error);
+            showStatus(`设置失败: ${error.message}`, true);
+            return false;
+        }
+    };
 
     const createList = async (listName, type = 'shared', showStatus) => {
         if (!user || !user.uid) return;
@@ -189,6 +207,9 @@ export const useSharedLists = (user) => {
         createList,
         renameList,
         deleteList,
-        mainListName // Export this
+        deleteList,
+        mainListName,
+        defaultListId,
+        setDefaultList
     };
 };

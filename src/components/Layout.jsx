@@ -21,7 +21,8 @@ import {
     Delete,
     Dashboard as DashboardIcon,
     Inventory as InventoryIcon,
-    Tune
+    Tune,
+    PushPin
 } from '@mui/icons-material';
 import { Menu, MenuItem, ListSubheader, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import NotificationCenter from './NotificationCenter';
@@ -47,7 +48,9 @@ const Layout = ({
     acceptInvite,
     declineInvite,
     showStatus,
-    mainListName // New prop
+    mainListName, // New prop
+    defaultListId,
+    setDefaultList
 }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -94,6 +97,13 @@ const Layout = ({
             setListModalMode('rename');
             setEditingList(selectedListForMenu);
             setListModalOpen(true);
+        }
+        handleListMenuClose();
+    };
+
+    const handleSetDefault = () => {
+        if (selectedListForMenu) {
+            setDefaultList(selectedListForMenu.id, showStatus);
         }
         handleListMenuClose();
     };
@@ -474,6 +484,13 @@ const Layout = ({
                 open={Boolean(menuAnchorEl)}
                 onClose={handleListMenuClose}
             >
+                <MenuItem onClick={handleSetDefault} disabled={selectedListForMenu && defaultListId === selectedListForMenu.id}>
+                    <ListItemIcon>
+                        <PushPin fontSize="small" color={selectedListForMenu && defaultListId === selectedListForMenu.id ? "action" : "primary"} />
+                    </ListItemIcon>
+                    <ListItemText>{selectedListForMenu && defaultListId === selectedListForMenu.id ? "已设为默认" : "设为默认"}</ListItemText>
+                </MenuItem>
+                <Divider />
                 <MenuItem onClick={handleOpenRenameModal}>
                     <ListItemIcon>
                         <Edit fontSize="small" />

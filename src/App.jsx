@@ -49,14 +49,14 @@ const App = () => {
     } = useAuth();
 
     // Shared Lists & Invitations Hooks
-    const { sharedLists, loadingLists, createList, renameList, deleteList, mainListName } = useSharedLists(user);
+    const { sharedLists, loadingLists, createList, renameList, deleteList, mainListName, defaultListId, setDefaultList } = useSharedLists(user);
     const { invitations, sendInvite, acceptInvite, declineInvite } = useInvitations(user);
 
     // Local State
     const [currentList, setCurrentList] = useState(null); // null = private, object = shared
     const [isRestored, setIsRestored] = useState(false);
 
-    // Restore selected list from local storage
+    // Restore selected list from preference
     useEffect(() => {
         // Wait for Auth to be ready
         if (!isAuthReady) return;
@@ -71,24 +71,19 @@ const App = () => {
         if (loadingLists) return;
 
         if (!isRestored) {
-            const lastListId = localStorage.getItem('lastSelectedListId');
-            if (lastListId && lastListId !== 'private') {
-                const foundList = sharedLists.find(l => l.id === lastListId);
-                if (foundList) {
-                    setCurrentList(foundList);
+            if (defaultListId) {
+                if (defaultListId === 'default') {
+                    setCurrentList(null);
+                } else {
+                    const foundList = sharedLists.find(l => l.id === defaultListId);
+                    if (foundList) {
+                        setCurrentList(foundList);
+                    }
                 }
             }
             setIsRestored(true);
         }
-    }, [isAuthReady, user, loadingLists, sharedLists, isRestored]);
-
-    // Save selected list to local storage
-    useEffect(() => {
-        if (isRestored && user) {
-            const idToSave = currentList ? currentList.id : 'private';
-            localStorage.setItem('lastSelectedListId', idToSave);
-        }
-    }, [currentList, isRestored, user]);
+    }, [isAuthReady, user, loadingLists, sharedLists, isRestored, defaultListId]);
 
     const {
         inventory, loading, addItem, updateStock, deleteItem, markAsReplaced, error: inventoryError
@@ -445,6 +440,8 @@ const App = () => {
                 declineInvite={declineInvite}
                 showStatus={showStatus}
                 mainListName={mainListName}
+                defaultListId={defaultListId}
+                setDefaultList={setDefaultList}
             >
                 <StatusMessage statusMessage={statusMessage} />
 
