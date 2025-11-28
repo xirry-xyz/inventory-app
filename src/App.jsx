@@ -58,7 +58,19 @@ const App = () => {
 
     // Restore selected list from local storage
     useEffect(() => {
-        if (!loadingLists && user && !isRestored) {
+        // Wait for Auth to be ready
+        if (!isAuthReady) return;
+
+        // If user is not logged in, we are "restored" (nothing to restore)
+        if (!user) {
+            if (!isRestored) setIsRestored(true);
+            return;
+        }
+
+        // If user is logged in, wait for lists to load
+        if (loadingLists) return;
+
+        if (!isRestored) {
             const lastListId = localStorage.getItem('lastSelectedListId');
             if (lastListId && lastListId !== 'private') {
                 const foundList = sharedLists.find(l => l.id === lastListId);
@@ -67,11 +79,8 @@ const App = () => {
                 }
             }
             setIsRestored(true);
-        } else if (!user && !isRestored) {
-            // If no user, just mark as restored so we don't block anything, though saving won't matter much
-            setIsRestored(true);
         }
-    }, [loadingLists, sharedLists, user, isRestored]);
+    }, [isAuthReady, user, loadingLists, sharedLists, isRestored]);
 
     // Save selected list to local storage
     useEffect(() => {
