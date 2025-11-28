@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper to check if user is the owner of the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Helper to check if user is a member of the list
+    function isMember(resourceData) {
+      return isAuthenticated() && (request.auth.uid in resourceData.members);
+    }
+
+    // Match the app namespace
+    match /artifacts/{appId} {
+      
+      // Allow access to user documents
+      match /users/{userId} {
+        allow read, write: if isOwner(userId);
+
+        // Match lists subcollection
+        match /lists/{listId} {
+          // Owner can do anything
+          allow create: if isOwner(userId);
+          allow delete: if isOwner(userId);
+          
+          // Read: Owner OR Member
+          allow read: if isOwner(userId) || isMember(resource.data);
+          
+          // Update: Owner OR Member (but maybe restrict what members can update?)
+          // For now, allow members to update (e.g. items)
+          allow update: if isOwner(userId) || isMember(resource.data);
+
+          // Match invitations subcollection
+          match /invitations/{inviteId} {
+            // Owner can create/read/delete
+            allow write: if isOwner(userId);
+            allow read: if isOwner(userId);
+
+            // IMPORTANT: Allow the RECIPIENT to read the invitation
+            // This enables collectionGroup queries for the recipient
+            allow read: if isAuthenticated() && resource.data.toEmail == request.auth.token.email;
+          }
+        }
+      }
+      
+      // Explicit Collection Group Rule for Invitations
+      // This ensures the collectionGroup query works regardless of the path depth
+      match /{path=**}/invitations/{inviteId} {
+        allow read: if isAuthenticated() && resource.data.toEmail == request.auth.token.email;
+      }
+    }
+      
+      // Allow access to global invitations (if we revert to that)
+      // match /invitations/{inviteId} {
+      //   allow create: if isAuthenticated();
+      //   allow read: if isAuthenticated() && (
+      //     resource.data.toEmail == request.auth.token.email || 
+      //     resource.data.inviterId == request.auth.uid
+      //   );
+      //   allow update: if isAuthenticated() && (
+      //     resource.data.toEmail == request.auth.token.email || 
+      //     resource.data.inviterId == request.auth.uid
+      //   );
+      // }
+    }
+    
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
