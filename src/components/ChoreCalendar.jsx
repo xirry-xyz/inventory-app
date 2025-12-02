@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, CheckCircle } from '@mui/icons-material';
 
 const DAYS_OF_WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 
-const ChoreCalendar = ({ chores }) => {
+const ChoreCalendar = ({ chores, onRemoveCompletion }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(null);
 
@@ -163,6 +163,7 @@ const ChoreCalendar = ({ chores }) => {
                                     color="success"
                                     variant="outlined"
                                     icon={<CheckCircle sx={{ width: 14, height: 14 }} />}
+                                    onDelete={() => onRemoveCompletion(chore.id, selectedDate)}
                                 />
                             ))}
                         </Stack>

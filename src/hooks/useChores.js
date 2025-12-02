@@ -108,37 +108,102 @@ export const useChores = (user, currentList) => {
         }
     };
 
-    const completeChore = async (chore, showStatus) => {
+    const completeChore = async (chore, showStatus, date = new Date()) => {
         try {
             const path = getChoresPath();
             const choreRef = doc(db, path, chore.id);
 
-            const today = new Date();
-            const todayStr = today.toDateString();
+            const completionDate = new Date(date);
+            completionDate.setHours(0, 0, 0, 0); // Normalize to midnight
+            const completionDateStr = completionDate.toDateString();
+            const completionISO = completionDate.toISOString();
 
-            // Check if already completed today
-            if (chore.lastCompleted) {
-                const lastDate = new Date(chore.lastCompleted);
-                if (lastDate.toDateString() === todayStr) {
-                    showStatus('今天已经完成过了，无需重复打卡', true);
+            // Check if already completed on this date
+            if (chore.completionHistory) {
+                const alreadyCompleted = chore.completionHistory.some(timestamp => {
+                    const d = new Date(timestamp);
+                    return d.toDateString() === completionDateStr;
+                });
+
+                if (alreadyCompleted) {
+                    showStatus('该日期已经完成过了，无需重复打卡', true);
                     return;
                 }
             }
 
-            // Calculate next due date
-            const nextDueDate = new Date();
-            nextDueDate.setHours(0, 0, 0, 0); // Reset to start of today
+            // Calculate next due date based on the *latest* completion
+            // If we are backdating, the next due date might not change if there's a later completion
+            // But usually "next due" implies from the last time it was done.
+            // Let's assume we want to recalculate based on the *latest* completion date in history + this new one.
+
+            let allCompletions = [...(chore.completionHistory || []), completionISO];
+            // Sort to find the latest
+            allCompletions.sort((a, b) => new Date(a) - new Date(b));
+            const latestCompletion = new Date(allCompletions[allCompletions.length - 1]);
+
+            const nextDueDate = new Date(latestCompletion);
+            nextDueDate.setHours(0, 0, 0, 0);
             nextDueDate.setDate(nextDueDate.getDate() + Number(chore.frequency));
 
             await updateDoc(choreRef, {
-                lastCompleted: today.toISOString(),
+                lastCompleted: latestCompletion.toISOString(),
                 nextDue: nextDueDate.toISOString(),
-                completionHistory: arrayUnion(today.toISOString())
+                completionHistory: arrayUnion(completionISO)
             });
             showStatus('家务已完成！');
         } catch (err) {
             console.error("Error completing chore:", err);
             showStatus(`操作失败: ${err.message}`, true);
+        }
+    };
+
+    const removeCompletion = async (choreId, dateToRemove, showStatus) => {
+        try {
+            const path = getChoresPath();
+            const choreRef = doc(db, path, choreId);
+
+            // We need the current chore data to filter the history
+            const chore = chores.find(c => c.id === choreId);
+            if (!chore) throw new Error("Chore not found");
+
+            const dateToRemoveStr = new Date(dateToRemove).toDateString();
+
+            const newHistory = (chore.completionHistory || []).filter(timestamp => {
+                return new Date(timestamp).toDateString() !== dateToRemoveStr;
+            });
+
+            // Recalculate lastCompleted and nextDue
+            let lastCompleted = null;
+            let nextDue = null;
+
+            if (newHistory.length > 0) {
+                newHistory.sort((a, b) => new Date(a) - new Date(b));
+                const latest = new Date(newHistory[newHistory.length - 1]);
+                lastCompleted = latest.toISOString();
+
+                const next = new Date(latest);
+                next.setHours(0, 0, 0, 0);
+                next.setDate(next.getDate() + Number(chore.frequency));
+                nextDue = next.toISOString();
+            } else {
+                // No history left, reset to created date or today?
+                // If we reset, maybe nextDue should be today?
+                // Let's set nextDue to today for simplicity if no history
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                nextDue = today.toISOString();
+            }
+
+            await updateDoc(choreRef, {
+                lastCompleted,
+                nextDue,
+                completionHistory: newHistory
+            });
+
+            showStatus('记录已删除');
+        } catch (err) {
+            console.error("Error removing completion:", err);
+            showStatus(`删除失败: ${err.message}`, true);
         }
     };
 
@@ -149,6 +214,8 @@ export const useChores = (user, currentList) => {
         addChore,
         updateChore,
         deleteChore,
-        completeChore
+        deleteChore,
+        completeChore,
+        removeCompletion
     };
 };

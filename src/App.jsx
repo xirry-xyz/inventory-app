@@ -90,7 +90,7 @@ const App = () => {
     } = useInventory(user, configError, isAuthReady, currentList);
 
     const {
-        chores, addChore, updateChore, deleteChore, completeChore
+        chores, addChore, updateChore, deleteChore, completeChore, removeCompletion
     } = useChores(user, currentList);
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -356,10 +356,13 @@ const App = () => {
                             <Box sx={{ p: 0 }}>
                                 {activeTab === 'chores' ? (
                                     <Box sx={{ p: 2 }}>
-                                        <ChoreCalendar chores={chores} />
+                                        <ChoreCalendar
+                                            chores={chores}
+                                            onRemoveCompletion={(id, date) => removeCompletion(id, date, showStatus)}
+                                        />
                                         <ChoreList
                                             chores={chores}
-                                            onComplete={(chore) => completeChore(chore, showStatus)}
+                                            onComplete={(chore, date) => completeChore(chore, showStatus, date)}
                                             onDelete={(id) => deleteChore(id, showStatus)}
                                             user={user}
                                         />
