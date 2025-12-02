@@ -24,21 +24,21 @@ if (configString && configString.trim() !== '' && configString.trim() !== '{}') 
         initializationError = `解析特殊配置(__firebase_config)失败: ${e.message}。请检查 JSON 格式。`;
     }
 } else {
-    // 2. 如果 Canvas 配置缺失，使用硬编码/环境变量
-    const hardcodedConfig = {
-      apiKey: "AIzaSyCbQZ-qkJuPr3lmufKbVgK1U_Rmyfy4u0E",
-      authDomain: "home-inventory-manager-5ec7a.firebaseapp.com",
-      projectId: "home-inventory-manager-5ec7a",
-      storageBucket: "home-inventory-manager-5ec7a.firebasestorage.com",
-      messagingSenderId: "712500151586",
-      appId: "1:712500151586:web:b44aa3d513b97a174d917b"
+    // 2. 如果 Canvas 配置缺失，使用环境变量
+    const envConfig = {
+        apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+        storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+        appId: import.meta.env.VITE_FIREBASE_APP_ID
     };
 
-    if (hardcodedConfig.projectId && hardcodedConfig.projectId !== "YOUR_PROJECT_ID") {
-        firebaseConfig = hardcodedConfig;
+    if (envConfig.projectId && envConfig.projectId !== "YOUR_PROJECT_ID") {
+        firebaseConfig = envConfig;
     } else {
-        initializationError = initializationError || 
-                              'Firebase配置缺失或未更新。请在Firebase控制台获取配置，并替换代码中的占位符。';
+        initializationError = initializationError ||
+            'Firebase配置缺失或未更新。请检查 .env 文件配置。';
     }
 }
 
