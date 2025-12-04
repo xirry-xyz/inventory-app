@@ -23,8 +23,19 @@ const InventoryView = ({
     return (
         <>
             {/* List Header */}
-            <Box sx={{ px: 3, py: 2, bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Stack direction="column" spacing={0.5}>
+            <Box sx={{
+                px: 3,
+                py: 2,
+                bgcolor: 'background.default',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' }, // Stack on mobile
+                justifyContent: 'space-between',
+                alignItems: { xs: 'flex-start', sm: 'center' }, // Align start on mobile
+                gap: { xs: 2, sm: 0 } // Add gap on mobile
+            }}>
+                <Stack direction="column" spacing={0.5} sx={{ width: '100%' }}>
                     <Stack direction="row" alignItems="center" spacing={1}>
                         <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">
                             {titleText}
@@ -45,7 +56,7 @@ const InventoryView = ({
                         </Typography>
                     )}
                 </Stack>
-                <Stack direction="row" alignItems="center" spacing={2}>
+                <Stack direction="row" alignItems="center" spacing={2} sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-start' } }}>
                     {currentList && currentList.type === 'shared' && (
                         <Button
                             size="small"
@@ -62,6 +73,7 @@ const InventoryView = ({
                         startIcon={<AddIcon />}
                         onClick={handleAddItemClick}
                         disabled={!user}
+                        fullWidth={isMobile} // Full width button on mobile
                     >
                         {activeTab === 'chores' ? '添加任务' : '添加物品'}
                     </Button>

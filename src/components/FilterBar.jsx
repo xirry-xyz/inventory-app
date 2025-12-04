@@ -18,7 +18,7 @@ export const categories = {
 
 const FilterBar = ({ searchTerm, setSearchTerm, activeCategory, setActiveCategory }) => {
     return (
-        <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Box sx={{ p: { xs: 2, md: 3 }, borderBottom: '1px solid', borderColor: 'divider' }}>
             <Grid container spacing={2} alignItems="center">
                 <Grid item xs={12} md={4}>
                     <Box sx={{ position: 'relative' }}>
