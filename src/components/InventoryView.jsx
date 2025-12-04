@@ -56,13 +56,13 @@ const InventoryView = ({
                         </Typography>
                     )}
                 </Stack>
-                <Stack direction="row" alignItems="center" spacing={2} sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-start' } }}>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-start' }, flexWrap: 'wrap', gap: 1 }}>
                     {currentList && currentList.type === 'shared' && (
                         <Button
                             size="small"
                             startIcon={<Share />}
                             onClick={handleShareList}
-                            sx={{ textTransform: 'none' }}
+                            sx={{ textTransform: 'none', whiteSpace: 'nowrap' }}
                         >
                             邀请成员
                         </Button>
@@ -73,7 +73,7 @@ const InventoryView = ({
                         startIcon={<AddIcon />}
                         onClick={handleAddItemClick}
                         disabled={!user}
-                        fullWidth={isMobile} // Full width button on mobile
+                        sx={{ flexGrow: { xs: 1, sm: 0 }, whiteSpace: 'nowrap' }}
                     >
                         {activeTab === 'chores' ? '添加任务' : '添加物品'}
                     </Button>

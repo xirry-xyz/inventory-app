@@ -40,7 +40,7 @@ const FilterBar = ({ searchTerm, setSearchTerm, activeCategory, setActiveCategor
                     </Box>
                 </Grid>
                 <Grid item xs={12} md={8}>
-                    <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 0.5 }}>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                         {Object.keys(categories).map(category => (
                             <Chip
                                 key={category}
@@ -53,7 +53,7 @@ const FilterBar = ({ searchTerm, setSearchTerm, activeCategory, setActiveCategor
                                 sx={{ borderRadius: 1 }}
                             />
                         ))}
-                    </Stack>
+                    </Box>
                 </Grid>
             </Grid>
         </Box>

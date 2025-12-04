@@ -3,7 +3,7 @@ import { Grid, Card, CardContent, Typography } from '@mui/material';
 
 const DashboardStats = ({ totalItems, restockCount, expiringCount }) => {
     return (
-        <Grid container spacing={2}>
+        <Grid container spacing={{ xs: 1, sm: 2 }}>
             <Grid item xs={4}>
                 <Card sx={{ height: '100%' }}>
                     <CardContent sx={{ py: 1.5, px: 1, '&:last-child': { pb: 1.5 }, textAlign: 'center' }}>
