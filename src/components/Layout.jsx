@@ -471,7 +471,7 @@ const Layout = ({
                 component="main"
                 sx={{
                     flexGrow: 1,
-                    p: 3,
+                    p: { xs: 2, md: 3 },
                     width: { md: `calc(100% - ${drawerWidth}px)` },
                     mt: isMobile ? 8 : 0
                 }}
