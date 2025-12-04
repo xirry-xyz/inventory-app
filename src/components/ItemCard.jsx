@@ -23,7 +23,40 @@ const ItemCard = ({ item, updateStock, deleteItem, user, markAsReplaced, isMobil
     const needsRestock = item.currentStock <= item.safetyStock;
     const isUserLoggedIn = !!user && !!user.uid;
 
-    // ... (rest of the logic)
+    const getExpirationStatus = (date) => {
+        if (!date) return null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const expDate = new Date(date);
+        expDate.setHours(0, 0, 0, 0);
+        const diffTime = expDate - today;
+        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (daysRemaining < 0) return { status: 'expired', days: Math.abs(daysRemaining) };
+        if (daysRemaining <= 7) return { status: 'warning', days: daysRemaining };
+        return { status: 'good', days: daysRemaining };
+    };
+
+    const getPeriodicStatus = (item) => {
+        if (!item.isPeriodic || !item.lastReplaced || !item.replacementCycle) return null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const lastDate = new Date(item.lastReplaced);
+        lastDate.setHours(0, 0, 0, 0);
+
+        const nextDate = new Date(lastDate);
+        nextDate.setDate(nextDate.getDate() + Number(item.replacementCycle));
+
+        const diffTime = nextDate - today;
+        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (daysRemaining < 0) return { status: 'expired', days: Math.abs(daysRemaining) };
+        if (daysRemaining <= 7) return { status: 'warning', days: daysRemaining };
+        return { status: 'good', days: daysRemaining };
+    };
+
+    const expInfo = getExpirationStatus(item.expirationDate);
+    const periodicInfo = getPeriodicStatus(item);
 
     return (
         <Card
@@ -32,7 +65,7 @@ const ItemCard = ({ item, updateStock, deleteItem, user, markAsReplaced, isMobil
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                position: 'relative', // Ensure absolute positioning works
+                position: 'relative',
                 transition: 'all 0.2s',
                 '&:hover': {
                     borderColor: 'primary.main',
@@ -40,9 +73,102 @@ const ItemCard = ({ item, updateStock, deleteItem, user, markAsReplaced, isMobil
                 }
             }}
         >
-            {/* ... content ... */}
+            <CardContent sx={{ flexGrow: 1, p: 2, '&:last-child': { pb: 2 } }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                    <Box>
+                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom component="div">
+                            {item.name}
+                        </Typography>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                            <Box sx={{ color: 'text.secondary', display: 'flex' }}>
+                                {categories[item.category] || categories['其他']}
+                            </Box>
+                            <Typography variant="body2" color="text.secondary">
+                                {item.category}
+                            </Typography>
+                        </Stack>
+                    </Box>
+                    {needsRestock ? (
+                        <Chip label="需补货" color="error" size="small" sx={{ height: 24, fontWeight: 'bold' }} />
+                    ) : (
+                        <Chip label="充足" color="success" size="small" variant="outlined" sx={{ height: 24 }} />
+                    )}
+                </Stack>
 
-            {/* Delete button: Always visible on mobile, hover on desktop */}
+                <Divider sx={{ my: 1.5 }} />
+
+                <Stack spacing={2}>
+                    {/* Stock Control */}
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                        <Typography variant="body2" color="text.secondary">当前库存</Typography>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                            <IconButton
+                                size="small"
+                                onClick={() => updateStock(item.id, item.currentStock - 1)}
+                                disabled={!isUserLoggedIn}
+                                sx={{ border: '1px solid', borderColor: 'divider', p: 0.5 }}
+                            >
+                                <Remove fontSize="small" />
+                            </IconButton>
+                            <Typography variant="body1" fontWeight="bold" sx={{ minWidth: 24, textAlign: 'center' }}>
+                                {item.currentStock}
+                            </Typography>
+                            <IconButton
+                                size="small"
+                                onClick={() => updateStock(item.id, item.currentStock + 1)}
+                                disabled={!isUserLoggedIn}
+                                sx={{ border: '1px solid', borderColor: 'divider', p: 0.5 }}
+                            >
+                                <Add fontSize="small" />
+                            </IconButton>
+                        </Stack>
+                    </Stack>
+
+                    {/* Expiry / Periodic Info */}
+                    {(expInfo || periodicInfo) && (
+                        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ bgcolor: 'action.hover', p: 1, borderRadius: 1 }}>
+                            <Stack direction="row" alignItems="center" spacing={1}>
+                                {expInfo ? (
+                                    <>
+                                        {expInfo.status === 'expired' ? <EventBusy fontSize="small" color="error" /> :
+                                            expInfo.status === 'warning' ? <Schedule fontSize="small" color="warning" /> :
+                                                <CalendarToday fontSize="small" color="success" />}
+                                        <Typography variant="body2" color={expInfo.status === 'expired' ? 'error.main' : expInfo.status === 'warning' ? 'warning.main' : 'text.primary'}>
+                                            {expInfo.status === 'expired' ? `已过期 ${expInfo.days} 天` :
+                                                expInfo.status === 'warning' ? `${expInfo.days} 天后过期` :
+                                                    item.expirationDate}
+                                        </Typography>
+                                    </>
+                                ) : (
+                                    <>
+                                        {periodicInfo.status === 'expired' ? <Autorenew fontSize="small" color="error" /> :
+                                            periodicInfo.status === 'warning' ? <Autorenew fontSize="small" color="warning" /> :
+                                                <Autorenew fontSize="small" color="success" />}
+                                        <Typography variant="body2" color={periodicInfo.status === 'expired' ? 'error.main' : periodicInfo.status === 'warning' ? 'warning.main' : 'text.primary'}>
+                                            {periodicInfo.status === 'expired' ? `超期 ${periodicInfo.days} 天` :
+                                                periodicInfo.status === 'warning' ? `${periodicInfo.days} 天后更换` :
+                                                    `${periodicInfo.days} 天后更换`}
+                                        </Typography>
+                                    </>
+                                )}
+                            </Stack>
+                            {periodicInfo && (
+                                <IconButton
+                                    size="small"
+                                    onClick={() => markAsReplaced(item.id)}
+                                    disabled={!isUserLoggedIn}
+                                    title="标记为已更换"
+                                    sx={{ p: 0.5, bgcolor: 'background.paper' }}
+                                >
+                                    <CheckCircle fontSize="small" color="action" />
+                                </IconButton>
+                            )}
+                        </Stack>
+                    )}
+                </Stack>
+            </CardContent>
+
+            {/* Delete button */}
             <Box sx={{
                 position: 'absolute',
                 top: 8,

@@ -206,12 +206,6 @@ const App = () => {
 
         return (
             <Stack spacing={3}>
-                {/* DEBUG INFO - REMOVE AFTER FIXING */}
-                <Box sx={{ p: 1, bgcolor: '#f0f0f0', fontSize: '0.7rem', fontFamily: 'monospace' }}>
-                    Total: {inventory.length}, Filtered: {filteredInventory.length}<br />
-                    Search: "{searchTerm}", Cat: "{activeCategory}"<br />
-                    First: {inventory[0] ? `${inventory[0].name} (${inventory[0].category})` : 'None'}
-                </Box>
                 {/* Tabs Navigation */}
                 <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
                     <Tabs
