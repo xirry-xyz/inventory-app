@@ -181,10 +181,10 @@ const App = () => {
                 const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 isExpiring = daysRemaining <= 7;
             }
-            return (needsRestock || isExpiring) && item.name.toLowerCase().includes(searchTerm.toLowerCase());
+            return (needsRestock || isExpiring) && (item.name || '').toLowerCase().includes(searchTerm.toLowerCase());
         }
 
-        const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = (item.name || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = activeCategory === '全部' || item.category === activeCategory;
 
         return matchesSearch && matchesCategory;
@@ -206,6 +206,12 @@ const App = () => {
 
         return (
             <Stack spacing={3}>
+                {/* DEBUG INFO - REMOVE AFTER FIXING */}
+                <Box sx={{ p: 1, bgcolor: '#f0f0f0', fontSize: '0.7rem', fontFamily: 'monospace' }}>
+                    Total: {inventory.length}, Filtered: {filteredInventory.length}<br />
+                    Search: "{searchTerm}", Cat: "{activeCategory}"<br />
+                    First: {inventory[0] ? `${inventory[0].name} (${inventory[0].category})` : 'None'}
+                </Box>
                 {/* Tabs Navigation */}
                 <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
                     <Tabs

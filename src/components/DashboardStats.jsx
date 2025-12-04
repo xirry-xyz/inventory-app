@@ -3,8 +3,8 @@ import { Grid, Card, CardContent, Typography } from '@mui/material';
 
 const DashboardStats = ({ totalItems, restockCount, expiringCount }) => {
     return (
-        <Grid container spacing={{ xs: 1, sm: 2 }}>
-            <Grid item xs={4}>
+        <Grid container sx={{ width: '100%', m: 0 }}>
+            <Grid item xs={4} sx={{ p: 0.5 }}>
                 <Card sx={{ height: '100%' }}>
                     <CardContent sx={{ py: 1.5, px: 1, '&:last-child': { pb: 1.5 }, textAlign: 'center' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>总物品</Typography>
@@ -12,7 +12,7 @@ const DashboardStats = ({ totalItems, restockCount, expiringCount }) => {
                     </CardContent>
                 </Card>
             </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={4} sx={{ p: 0.5 }}>
                 <Card sx={{ height: '100%' }}>
                     <CardContent sx={{ py: 1.5, px: 1, '&:last-child': { pb: 1.5 }, textAlign: 'center' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>需补货</Typography>
@@ -22,7 +22,7 @@ const DashboardStats = ({ totalItems, restockCount, expiringCount }) => {
                     </CardContent>
                 </Card>
             </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={4} sx={{ p: 0.5 }}>
                 <Card sx={{ height: '100%' }}>
                     <CardContent sx={{ py: 1.5, px: 1, '&:last-child': { pb: 1.5 }, textAlign: 'center' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>即将过期</Typography>
