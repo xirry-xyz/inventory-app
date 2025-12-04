@@ -24,7 +24,7 @@ const InventoryView = ({
         <>
             {/* List Header */}
             <Box sx={{
-                px: 3,
+                px: { xs: 2, sm: 3 },
                 py: 2,
                 bgcolor: 'background.default',
                 borderBottom: '1px solid',
@@ -84,20 +84,19 @@ const InventoryView = ({
             <Box sx={{ p: 0 }}>
                 {itemsList.length > 0 ? (
                     isMobile ? (
-                        <Grid container spacing={2} sx={{ p: 2 }}>
+                        <Stack spacing={2} sx={{ p: { xs: 2, sm: 3 } }}>
                             {itemsList.map(item => (
-                                <Grid item xs={12} key={item.id}>
-                                    <ItemCard
-                                        item={item}
-                                        updateStock={updateStock}
-                                        deleteItem={deleteItem}
-                                        markAsReplaced={markAsReplaced}
-                                        user={user}
-                                        isMobile={isMobile}
-                                    />
-                                </Grid>
+                                <ItemCard
+                                    key={item.id}
+                                    item={item}
+                                    updateStock={updateStock}
+                                    deleteItem={deleteItem}
+                                    markAsReplaced={markAsReplaced}
+                                    user={user}
+                                    isMobile={isMobile}
+                                />
                             ))}
-                        </Grid>
+                        </Stack>
                     ) : (
                         <InventoryTable
                             items={itemsList}
