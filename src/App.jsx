@@ -1,9 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
-import {
-    Package, Leaf, ShoppingCart, Wrench, Heart, Cat, Sprout,
-    AlertTriangle, Check, Search, Home, LogOut, Chrome, Loader, Plus
-} from 'lucide-react';
+
 
 import { useAuth } from './hooks/useAuth';
 import { useInventory } from './hooks/useInventory';
@@ -24,22 +21,16 @@ import NotificationPage from './components/NotificationPage';
 import ChoreList from './components/ChoreList';
 import ChoreForm from './components/ChoreForm';
 import ChoreCalendar from './components/ChoreCalendar';
+import DashboardStats from './components/DashboardStats';
+import FilterBar, { categories } from './components/FilterBar';
+import InventoryView from './components/InventoryView';
 
 import {
     Box, Typography, Grid, Paper, InputBase, IconButton, Button, Chip, Stack, CircularProgress, Card, CardContent, Divider, useMediaQuery, Tabs, Tab
 } from '@mui/material';
-import { Search as SearchIcon, Add as AddIcon, CheckCircle, Warning, Error as ErrorIcon, Share } from '@mui/icons-material';
+import { Add as AddIcon, Share } from '@mui/icons-material';
 
-// Categories constant
-const categories = {
-    '全部': <Package className="w-5 h-5" />,
-    '食品生鲜': <Leaf className="w-5 h-5" />,
-    '日用百货': <ShoppingCart className="w-5 h-5" />,
-    '个护清洁': <Wrench className="w-5 h-5" />,
-    '医疗健康': <Heart className="w-5 h-5" />,
-    '猫咪相关': <Cat className="w-5 h-5" />,
-    '其他': <Sprout className="w-5 h-5" />,
-};
+
 
 const App = () => {
     // Hooks
@@ -211,7 +202,6 @@ const App = () => {
 
         const itemsList = filteredInventory;
         const titleText = activeTab === 'restock' ? '需补货/过期清单' : `${activeCategory} 物品`;
-        const itemQuantity = itemsList.length;
         const isUserGoogleLoggedIn = !!user && !!user.uid;
 
         return (
@@ -233,30 +223,11 @@ const App = () => {
 
                 {/* Dashboard Stats (Only on Inventory) */}
                 {activeTab === 'inventory' && (
-                    <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
-                        <Card sx={{ flex: 1 }}>
-                            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 }, textAlign: 'center' }}>
-                                <Typography variant="body2" color="text.secondary">总物品</Typography>
-                                <Typography variant="h5" fontWeight="bold">{inventory.length}</Typography>
-                            </CardContent>
-                        </Card>
-                        <Card sx={{ flex: 1 }}>
-                            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 }, textAlign: 'center' }}>
-                                <Typography variant="body2" color="text.secondary">需补货</Typography>
-                                <Typography variant="h5" fontWeight="bold" color={itemsToRestock.length > 0 ? "error.main" : "text.primary"}>
-                                    {itemsToRestock.length}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                        <Card sx={{ flex: 1 }}>
-                            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 }, textAlign: 'center' }}>
-                                <Typography variant="body2" color="text.secondary">即将过期</Typography>
-                                <Typography variant="h5" fontWeight="bold" color={itemsExpiringSoon.length > 0 ? "warning.main" : "text.primary"}>
-                                    {itemsExpiringSoon.length}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Stack>
+                    <DashboardStats
+                        totalItems={inventory.length}
+                        restockCount={itemsToRestock.length}
+                        expiringCount={itemsExpiringSoon.length}
+                    />
                 )}
 
                 {/* Filters & Content (Only on Inventory or Restock) */}
@@ -265,146 +236,43 @@ const App = () => {
                         <CardContent sx={{ p: 0 }}>
                             {/* Search & Filter Header (Only for Inventory/Restock) */}
                             {activeTab !== 'restock' && activeTab !== 'chores' && (
-                                <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
-                                    <Grid container spacing={2} alignItems="center">
-                                        <Grid item xs={12} md={4}>
-                                            <Box sx={{ position: 'relative' }}>
-                                                <Box sx={{ position: 'absolute', top: 10, left: 12, color: 'text.secondary' }}>
-                                                    <SearchIcon fontSize="small" />
-                                                </Box>
-                                                <InputBase
-                                                    placeholder="搜索物品..."
-                                                    value={searchTerm}
-                                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                                    sx={{
-                                                        width: '100%',
-                                                        pl: 5, pr: 2, py: 0.5,
-                                                        border: '1px solid', borderColor: 'divider', borderRadius: 1,
-                                                        fontSize: '0.875rem',
-                                                        '&:focus-within': { borderColor: 'primary.main', borderWidth: 1 }
-                                                    }}
-                                                />
-                                            </Box>
-                                        </Grid>
-                                        <Grid item xs={12} md={8}>
-                                            <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 0.5 }}>
-                                                {Object.keys(categories).map(category => (
-                                                    <Chip
-                                                        key={category}
-                                                        label={category}
-                                                        onClick={() => setActiveCategory(category)}
-                                                        color={activeCategory === category ? "primary" : "default"}
-                                                        variant={activeCategory === category ? "filled" : "outlined"}
-                                                        clickable
-                                                        size="small"
-                                                        sx={{ borderRadius: 1 }}
-                                                    />
-                                                ))}
-                                            </Stack>
-                                        </Grid>
-                                    </Grid>
-                                </Box>
+                                <FilterBar
+                                    searchTerm={searchTerm}
+                                    setSearchTerm={setSearchTerm}
+                                    activeCategory={activeCategory}
+                                    setActiveCategory={setActiveCategory}
+                                />
                             )}
 
-                            {/* List Header */}
-                            <Box sx={{ px: 3, py: 2, bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Stack direction="column" spacing={0.5}>
-                                    <Stack direction="row" alignItems="center" spacing={1}>
-                                        <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">
-                                            {activeTab === 'chores' ? '家务任务' : titleText}
-                                        </Typography>
-                                        {currentList && (
-                                            <Chip
-                                                label="共享列表"
-                                                size="small"
-                                                color="primary"
-                                                variant="outlined"
-                                                sx={{ height: 20, fontSize: '0.7rem' }}
-                                            />
-                                        )}
-                                    </Stack>
-                                    {currentList && currentList.type === 'shared' && (
-                                        <Typography variant="caption" color="text.secondary">
-                                            创建者: {currentList.ownerEmail || '未知'} | 成员: {currentList.memberEmails ? currentList.memberEmails.join(', ') : `${currentList.members ? currentList.members.length : 0} 人`}
-                                        </Typography>
-                                    )}
-                                </Stack>
-                                <Stack direction="row" alignItems="center" spacing={2}>
-                                    {currentList && currentList.type === 'shared' && (
-                                        <Button
-                                            size="small"
-                                            startIcon={<Share />}
-                                            onClick={handleShareList}
-                                            sx={{ textTransform: 'none' }}
-                                        >
-                                            邀请成员
-                                        </Button>
-                                    )}
-                                    <Button
-                                        variant="contained"
-                                        size="small"
-                                        startIcon={<AddIcon />}
-                                        onClick={handleAddItemClick}
-                                        disabled={!user}
-                                    >
-                                        {activeTab === 'chores' ? '添加任务' : '添加物品'}
-                                    </Button>
-                                </Stack>
-                            </Box>
-
                             {/* Content Area */}
-                            <Box sx={{ p: 0 }}>
-                                {activeTab === 'chores' ? (
-                                    <Box sx={{ p: 2 }}>
-                                        <ChoreCalendar
-                                            chores={chores}
-                                            onRemoveCompletion={(id, date) => removeCompletion(id, date, showStatus)}
-                                        />
-                                        <ChoreList
-                                            chores={chores}
-                                            onComplete={(chore, date) => completeChore(chore, showStatus, date)}
-                                            onDelete={(id) => deleteChore(id, showStatus)}
-                                            user={user}
-                                        />
-                                    </Box>
-                                ) : (
-                                    itemsList.length > 0 ? (
-                                        isMobile ? (
-                                            <Grid container spacing={2} sx={{ p: 2 }}>
-                                                {itemsList.map(item => (
-                                                    <Grid item xs={12} key={item.id}>
-                                                        <ItemCard
-                                                            item={item}
-                                                            updateStock={updateStockWrapper}
-                                                            deleteItem={deleteItemWrapper}
-                                                            markAsReplaced={markAsReplacedWrapper}
-                                                            user={user}
-                                                        />
-                                                    </Grid>
-                                                ))}
-                                            </Grid>
-                                        ) : (
-                                            <InventoryTable
-                                                items={itemsList}
-                                                updateStock={updateStockWrapper}
-                                                deleteItem={deleteItemWrapper}
-                                                markAsReplaced={markAsReplacedWrapper}
-                                                user={user}
-                                            />
-                                        )
-                                    ) : (
-                                        <Box sx={{ py: 8, textAlign: 'center' }}>
-                                            <Typography color="text.secondary">
-                                                {isUserGoogleLoggedIn
-                                                    ? (activeTab === 'restock'
-                                                        ? "没有需要补货或即将过期的物品"
-                                                        : "没有找到匹配的物品")
-                                                    : "请先登录"}
-                                            </Typography>
-                                        </Box>
-                                    )
-                                )}
-                            </Box>
+                            {activeTab === 'chores' ? (
+                                <Box sx={{ p: 2 }}>
+                                    <ChoreCalendar
+                                        chores={chores}
+                                        onRemoveCompletion={(id, date) => removeCompletion(id, date, showStatus)}
+                                    />
+                                    <ChoreList
+                                        chores={chores}
+                                        onComplete={(chore, date) => completeChore(chore, showStatus, date)}
+                                        onDelete={(id) => deleteChore(id, showStatus)}
+                                        user={user}
+                                    />
+                                </Box>
+                            ) : (
+                                <InventoryView
+                                    activeTab={activeTab}
+                                    titleText={titleText}
+                                    currentList={currentList}
+                                    handleShareList={handleShareList}
+                                    handleAddItemClick={handleAddItemClick}
+                                    user={user}
+                                    itemsList={itemsList}
+                                    updateStock={updateStockWrapper}
+                                    deleteItem={deleteItemWrapper}
+                                    markAsReplaced={markAsReplacedWrapper}
+                                    isUserGoogleLoggedIn={isUserGoogleLoggedIn}
+                                />
+                            )}
                         </CardContent>
                     </Card>
                 )}

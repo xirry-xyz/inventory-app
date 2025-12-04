@@ -6,6 +6,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      screens: {
+        'xs': '375px',
+        // Default breakpoints: sm: 640px, md: 768px, lg: 1024px, xl: 1280px, 2xl: 1536px
+      },
       borderRadius: {
         'xl': '1rem',   // 默认 xl 圆角稍微加大
         '2xl': '1.5rem', // 大圆角

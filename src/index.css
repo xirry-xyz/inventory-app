@@ -1,7 +1,11 @@
-/* Tailwind CSS 核心指令 */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+    min-width: 375px;
+}
+
 
 /* -----------------------------------------------------------------
 跨浏览器滚动条隐藏 (Linter 警告是正常的，因为这些是非标准属性)
