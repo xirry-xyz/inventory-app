@@ -88,11 +88,29 @@ const ItemCard = ({ item, updateStock, deleteItem, user, markAsReplaced, isMobil
                             </Typography>
                         </Stack>
                     </Box>
-                    {needsRestock ? (
-                        <Chip label="需补货" color="error" size="small" sx={{ height: 24, fontWeight: 'bold' }} />
-                    ) : (
-                        <Chip label="充足" color="success" size="small" variant="outlined" sx={{ height: 24 }} />
-                    )}
+                    {/* Status Chip & Delete Button */}
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        {needsRestock ? (
+                            <Chip label="需补货" color="error" size="small" sx={{ height: 24, fontWeight: 'bold' }} />
+                        ) : (
+                            <Chip label="充足" color="success" size="small" variant="outlined" sx={{ height: 24 }} />
+                        )}
+                        <IconButton
+                            size="small"
+                            onClick={() => deleteItem(item.id)}
+                            disabled={!isUserLoggedIn}
+                            sx={{
+                                color: 'text.disabled',
+                                '&:hover': { color: 'error.main' },
+                                opacity: isMobile ? 1 : 0,
+                                transition: 'opacity 0.2s',
+                                '.MuiCard-root:hover &': { opacity: 1 },
+                                p: 0.5
+                            }}
+                        >
+                            <Delete fontSize="small" />
+                        </IconButton>
+                    </Stack>
                 </Stack>
 
                 <Divider sx={{ my: 1.5 }} />
@@ -167,25 +185,6 @@ const ItemCard = ({ item, updateStock, deleteItem, user, markAsReplaced, isMobil
                     )}
                 </Stack>
             </CardContent>
-
-            {/* Delete button */}
-            <Box sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                opacity: isMobile ? 1 : 0,
-                transition: 'opacity 0.2s',
-                '.MuiCard-root:hover &': { opacity: 1 }
-            }}>
-                <IconButton
-                    size="small"
-                    onClick={() => deleteItem(item.id)}
-                    disabled={!isUserLoggedIn}
-                    sx={{ color: 'text.disabled', '&:hover': { color: 'error.main' } }}
-                >
-                    <Delete fontSize="small" />
-                </IconButton>
-            </Box>
         </Card>
     );
 };
