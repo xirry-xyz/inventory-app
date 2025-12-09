@@ -1,31 +1,44 @@
 import React, { useState } from 'react';
 import {
-    Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton,
-    ListItem, ListItemButton, ListItemIcon, ListItemText, useTheme, useMediaQuery,
-    Avatar, Stack, Button, Badge
-} from '@mui/material';
-import {
     Menu as MenuIcon,
-    Home,
-    Notifications,
+    MoreVertical,
+    LogOut,
+    LogIn,
+    User,
+    List as ListIcon,
+    Users,
+    Plus,
+    Bell,
     Settings,
-    Add,
-    Logout,
-    Login,
-    ChevronLeft,
-    ListAlt,
-    Person,
-    Group,
-    MoreVert,
     Edit,
-    Delete,
-    Dashboard as DashboardIcon,
-    Inventory as InventoryIcon,
-    Tune,
-    PushPin
-} from '@mui/icons-material';
-import { Menu, MenuItem, ListSubheader, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import NotificationCenter from './NotificationCenter';
+    Trash2,
+    Pin
+} from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+    Sheet,
+    SheetContent,
+    SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import ListActionModal from './ListActionModal';
 
 const drawerWidth = 240;
@@ -52,15 +65,7 @@ const Layout = ({
     defaultListId,
     setDefaultList
 }) => {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [mobileOpen, setMobileOpen] = useState(false);
-
-    const handleDrawerToggle = () => {
-        setMobileOpen(!mobileOpen);
-    };
-
-    // Nav items removed in favor of Tabs in App.jsx
 
     const [listModalOpen, setListModalOpen] = useState(false);
     const [listModalMode, setListModalMode] = useState('create'); // 'create' or 'rename'
@@ -71,60 +76,35 @@ const Layout = ({
     const [deleteMessage, setDeleteMessage] = useState('');
     const [listToDelete, setListToDelete] = useState(null);
 
-    // Menu state for list actions
-    const [menuAnchorEl, setMenuAnchorEl] = useState(null);
-    const [selectedListForMenu, setSelectedListForMenu] = useState(null);
-
-    const handleListMenuOpen = (event, list) => {
-        event.stopPropagation();
-        setMenuAnchorEl(event.currentTarget);
-        setSelectedListForMenu(list);
-    };
-
-    const handleListMenuClose = () => {
-        setMenuAnchorEl(null);
-        setSelectedListForMenu(null);
-    };
-
     const handleOpenCreateModal = () => {
         setListModalMode('create');
         setEditingList(null);
         setListModalOpen(true);
     };
 
-    const handleOpenRenameModal = () => {
-        if (selectedListForMenu) {
-            setListModalMode('rename');
-            setEditingList(selectedListForMenu);
-            setListModalOpen(true);
-        }
-        handleListMenuClose();
+    const handleOpenRenameModal = (list) => {
+        setListModalMode('rename');
+        setEditingList(list);
+        setListModalOpen(true);
     };
 
-    const handleSetDefault = () => {
-        if (selectedListForMenu) {
-            setDefaultList(selectedListForMenu.id, showStatus);
-        }
-        handleListMenuClose();
+    const handleSetDefault = (list) => {
+        setDefaultList(list.id, showStatus);
     };
 
-    const handleDeleteListClick = () => {
-        if (selectedListForMenu) {
-            if (selectedListForMenu.id === 'default') {
-                const privateListsCount = sharedLists ? sharedLists.filter(l => l.type === 'private').length : 0;
-                if (privateListsCount === 0) {
-                    showStatus('无法删除：这是您唯一的私有列表。', true);
-                    handleListMenuClose();
-                    return;
-                }
-                setDeleteMessage('确定要清空并删除主清单吗？注意：这会清空主清单中的所有物品。');
-            } else {
-                setDeleteMessage(`确定要删除列表 "${selectedListForMenu.name}" 吗？`);
+    const handleDeleteListClick = (list) => {
+        if (list.id === 'default') {
+            const privateListsCount = sharedLists ? sharedLists.filter(l => l.type === 'private').length : 0;
+            if (privateListsCount === 0) {
+                showStatus('无法删除：这是您唯一的私有列表。', true);
+                return;
             }
-            setListToDelete(selectedListForMenu);
-            setDeleteModalOpen(true);
+            setDeleteMessage('确定要清空并删除主清单吗？注意：这会清空主清单中的所有物品。');
+        } else {
+            setDeleteMessage(`确定要删除列表 "${list.name}" 吗？`);
         }
-        handleListMenuClose();
+        setListToDelete(list);
+        setDeleteModalOpen(true);
     };
 
     const handleConfirmDelete = () => {
@@ -150,360 +130,262 @@ const Layout = ({
     const privateLists = sharedLists ? sharedLists.filter(l => l.type === 'private') : [];
     const sharedListsFiltered = sharedLists ? sharedLists.filter(l => l.type === 'shared') : [];
 
-    const drawer = (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Toolbar sx={{ px: 2 }}>
-                <Typography variant="h6" noWrap component="div" fontWeight="bold">
-                    Inventory<Box component="span" color="primary.main">App</Box>
-                </Typography>
-            </Toolbar>
-            <Divider />
-            <List sx={{ px: 2, pt: 2 }}>
-                {/* Dashboard Navigation Removed */}
-            </List>
+    const SidebarContent = () => (
+        <div className="flex flex-col h-full bg-muted/20 border-r">
+            <div className="h-16 flex items-center px-6 border-b">
+                <h1 className="text-lg font-bold">
+                    Inventory<span className="text-primary">App</span>
+                </h1>
+            </div>
 
-            {/* List Switcher */}
-            {user && (
-                <Box sx={{ px: 2, flexGrow: 1, overflowY: 'auto' }}>
-                    <ListSubheader sx={{ bgcolor: 'transparent', fontWeight: 'bold', lineHeight: '32px', mb: 1 }}>
-                        我的清单
-                    </ListSubheader>
-                    <List dense sx={{ p: 0 }}>
-                        {/* Private Lists Section */}
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 2, mb: 1, display: 'block', px: 1, fontWeight: 'bold' }}>
-                            私有列表
-                        </Typography>
+            <ScrollArea className="flex-1 py-4">
+                <div className="px-4 space-y-4">
+                    {user && (
+                        <div className="space-y-1">
+                            <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                                我的清单
+                            </h3>
 
-                        {/* Default List (Main Inventory) */}
-                        <ListItem
-                            disablePadding
-                            sx={{ mb: 0.5 }}
-                            secondaryAction={
-                                <IconButton edge="end" size="small" onClick={(e) => handleListMenuOpen(e, { id: 'default', name: mainListName || '主清单', type: 'private' })}>
-                                    <MoreVert fontSize="small" sx={{ fontSize: '1rem' }} />
-                                </IconButton>
-                            }
-                        >
-                            <ListItemButton
-                                selected={!currentList && activeTab !== 'settings' && activeTab !== 'notifications'} // Null means default private list
-                                onClick={() => {
-                                    setCurrentList(null);
-                                    setActiveTab('inventory');
-                                    if (isMobile) setMobileOpen(false);
-                                }}
-                                sx={{
-                                    borderRadius: 2,
-                                    '&.Mui-selected': {
-                                        bgcolor: 'action.selected',
-                                        borderLeft: '4px solid',
-                                        borderColor: 'primary.main',
-                                        paddingLeft: '12px'
-                                    }
-                                }}
+                            {/* Private Lists */}
+                            <div className="space-y-1">
+                                <p className="px-2 text-xs text-muted-foreground/70 font-medium py-1">私有列表</p>
+                                {/* Default List */}
+                                <div className="group flex items-center justify-between rounded-md hover:bg-muted/50 transition-colors">
+                                    <Button
+                                        variant="ghost"
+                                        className={`justify-start w-full font-normal ${!currentList && activeTab === 'inventory' ? 'bg-secondary font-medium' : ''}`}
+                                        onClick={() => {
+                                            setCurrentList(null);
+                                            setActiveTab('inventory');
+                                            setMobileOpen(false);
+                                        }}
+                                    >
+                                        <User className={`mr-2 h-4 w-4 ${!currentList && activeTab === 'inventory' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                        {mainListName || "主清单"}
+                                    </Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleSetDefault({ id: 'default', name: mainListName || '主清单' })} disabled={defaultListId === 'default'}>
+                                                <Pin className="mr-2 h-4 w-4" />
+                                                {defaultListId === 'default' ? "已设为默认" : "设为默认"}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={() => handleOpenRenameModal({ id: 'default', name: mainListName || '主清单' })}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                重命名
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleDeleteListClick({ id: 'default', name: mainListName || '主清单' })} className="text-destructive focus:text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                删除
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+
+                                {/* Other Private Lists */}
+                                {privateLists.map(list => (
+                                    <div key={list.id} className="group flex items-center justify-between rounded-md hover:bg-muted/50 transition-colors">
+                                        <Button
+                                            variant="ghost"
+                                            className={`justify-start w-full font-normal ${currentList?.id === list.id && activeTab === 'inventory' ? 'bg-secondary font-medium' : ''}`}
+                                            onClick={() => {
+                                                setCurrentList(list);
+                                                setActiveTab('inventory');
+                                                setMobileOpen(false);
+                                            }}
+                                        >
+                                            <ListIcon className={`mr-2 h-4 w-4 ${currentList?.id === list.id && activeTab === 'inventory' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                            {list.name}
+                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleSetDefault(list)} disabled={defaultListId === list.id}>
+                                                    <Pin className="mr-2 h-4 w-4" />
+                                                    {defaultListId === list.id ? "已设为默认" : "设为默认"}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onClick={() => handleOpenRenameModal(list)}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    重命名
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleDeleteListClick(list)} className="text-destructive focus:text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    删除
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Shared Lists */}
+                            <div className="space-y-1 mt-4">
+                                <p className="px-2 text-xs text-muted-foreground/70 font-medium py-1">共享列表</p>
+                                {sharedListsFiltered.map(list => (
+                                    <div key={list.id} className="group flex items-center justify-between rounded-md hover:bg-muted/50 transition-colors">
+                                        <Button
+                                            variant="ghost"
+                                            className={`justify-start w-full font-normal ${currentList?.id === list.id && activeTab === 'inventory' ? 'bg-secondary font-medium' : ''}`}
+                                            onClick={() => {
+                                                setCurrentList(list);
+                                                setActiveTab('inventory');
+                                                setMobileOpen(false);
+                                            }}
+                                        >
+                                            <Users className={`mr-2 h-4 w-4 ${currentList?.id === list.id && activeTab === 'inventory' ? 'text-secondary-foreground' : 'text-muted-foreground'}`} />
+                                            {list.name}
+                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleSetDefault(list)} disabled={defaultListId === list.id}>
+                                                    <Pin className="mr-2 h-4 w-4" />
+                                                    {defaultListId === list.id ? "已设为默认" : "设为默认"}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onClick={() => handleOpenRenameModal(list)}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    重命名
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleDeleteListClick(list)} className="text-destructive focus:text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    删除
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full justify-start text-muted-foreground mt-4"
+                                onClick={handleOpenCreateModal}
                             >
-                                <ListItemIcon sx={{ minWidth: 32 }}>
-                                    <Person fontSize="small" color={!currentList ? "primary" : "action"} />
-                                </ListItemIcon>
-                                <ListItemText primary={mainListName || "主清单"} primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: !currentList ? 'bold' : 'normal' }} />
-                            </ListItemButton>
-                        </ListItem>
+                                <Plus className="mr-2 h-4 w-4" />
+                                新建列表...
+                            </Button>
+                        </div>
+                    )}
 
-                        {/* Other Private Lists */}
-                        {privateLists.map(list => (
-                            <ListItem
-                                key={list.id}
-                                disablePadding
-                                secondaryAction={
-                                    <IconButton edge="end" size="small" onClick={(e) => handleListMenuOpen(e, list)}>
-                                        <MoreVert fontSize="small" sx={{ fontSize: '1rem' }} />
-                                    </IconButton>
-                                }
-                                sx={{ mb: 0.5 }}
-                            >
-                                <ListItemButton
-                                    selected={currentList?.id === list.id && activeTab !== 'settings' && activeTab !== 'notifications'}
-                                    onClick={() => {
-                                        setCurrentList(list);
-                                        setActiveTab('inventory');
-                                        if (isMobile) setMobileOpen(false);
-                                    }}
-                                    sx={{
-                                        borderRadius: 2,
-                                        '&.Mui-selected': {
-                                            bgcolor: 'action.selected',
-                                            borderLeft: '4px solid',
-                                            borderColor: 'primary.main',
-                                            paddingLeft: '12px'
-                                        }
-                                    }}
-                                >
-                                    <ListItemIcon sx={{ minWidth: 32 }}>
-                                        <ListAlt fontSize="small" color={currentList?.id === list.id ? "primary" : "action"} />
-                                    </ListItemIcon>
-                                    <ListItemText primary={list.name} primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: currentList?.id === list.id ? 'bold' : 'normal' }} />
-                                </ListItemButton>
-                            </ListItem>
-                        ))}
+                    <Separator className="my-4" />
 
-                        {/* Shared Lists Header */}
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 2, mb: 1, display: 'block', px: 1, fontWeight: 'bold' }}>
-                            共享列表
-                        </Typography>
-                        {sharedListsFiltered.map(list => (
-                            <ListItem
-                                key={list.id}
-                                disablePadding
-                                secondaryAction={
-                                    <IconButton edge="end" size="small" onClick={(e) => handleListMenuOpen(e, list)}>
-                                        <MoreVert fontSize="small" sx={{ fontSize: '1rem' }} />
-                                    </IconButton>
-                                }
-                                sx={{ mb: 0.5 }}
-                            >
-                                <ListItemButton
-                                    selected={currentList?.id === list.id && activeTab !== 'settings' && activeTab !== 'notifications'}
-                                    onClick={() => {
-                                        setCurrentList(list);
-                                        setActiveTab('inventory');
-                                        if (isMobile) setMobileOpen(false);
-                                    }}
-                                    sx={{
-                                        borderRadius: 2,
-                                        '&.Mui-selected': {
-                                            bgcolor: 'action.selected',
-                                            borderLeft: '4px solid',
-                                            borderColor: 'primary.main',
-                                            paddingLeft: '12px'
-                                        }
-                                    }}
-                                >
-                                    <ListItemIcon sx={{ minWidth: 32 }}>
-                                        <Group fontSize="small" color={currentList?.id === list.id ? "secondary" : "action"} />
-                                    </ListItemIcon>
-                                    <ListItemText primary={list.name} primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: currentList?.id === list.id ? 'bold' : 'normal' }} />
-                                </ListItemButton>
-                            </ListItem>
-                        ))}
-
+                    <div className="space-y-1">
+                        <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                            系统
+                        </h3>
                         <Button
-                            size="small"
-                            startIcon={<Add />}
-                            onClick={handleOpenCreateModal}
-                            sx={{ mt: 1, textTransform: 'none', justifyContent: 'flex-start', px: 2, color: 'text.secondary' }}
-                            fullWidth
+                            variant={activeTab === 'notifications' ? 'secondary' : 'ghost'}
+                            className="w-full justify-start"
+                            onClick={() => {
+                                setActiveTab('notifications');
+                                setMobileOpen(false);
+                            }}
                         >
-                            新建列表...
+                            <div className="relative mr-2">
+                                <Bell className="h-4 w-4" />
+                                {invitations.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                    </span>
+                                )}
+                            </div>
+                            消息中心
                         </Button>
-                    </List>
-                </Box>
-            )}
+                        <Button
+                            variant={activeTab === 'settings' ? 'secondary' : 'ghost'}
+                            className="w-full justify-start"
+                            onClick={() => {
+                                setActiveTab('settings');
+                                setMobileOpen(false);
+                            }}
+                        >
+                            <Settings className="mr-2 h-4 w-4" />
+                            设置
+                        </Button>
+                    </div>
+                </div>
+            </ScrollArea>
 
-            <Divider sx={{ my: 1, mx: 2 }} />
-
-            {/* System Section */}
-            <List sx={{ px: 2, pb: 1 }}>
-                <ListSubheader sx={{ bgcolor: 'transparent', fontWeight: 'bold', lineHeight: '32px', mb: 1 }}>
-                    系统
-                </ListSubheader>
-
-                {/* Notification Center Item */}
-                <ListItem disablePadding sx={{ mb: 0.5 }}>
-                    <ListItemButton
-                        selected={activeTab === 'notifications'}
-                        onClick={() => {
-                            setActiveTab('notifications');
-                            if (isMobile) setMobileOpen(false);
-                        }}
-                        sx={{
-                            borderRadius: 2,
-                            '&.Mui-selected': {
-                                bgcolor: 'action.selected',
-                                borderLeft: '4px solid',
-                                borderColor: 'primary.main',
-                                paddingLeft: '12px'
-                            }
-                        }}
-                    >
-                        <ListItemIcon sx={{ minWidth: 32 }}>
-                            <Badge badgeContent={invitations.length} color="error" variant="dot">
-                                <Notifications fontSize="small" color={activeTab === 'notifications' ? "primary" : "action"} />
-                            </Badge>
-                        </ListItemIcon>
-                        <ListItemText primary="消息中心" primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: activeTab === 'notifications' ? 'bold' : 'normal' }} />
-                    </ListItemButton>
-                </ListItem>
-
-                <ListItem disablePadding sx={{ mb: 0.5 }}>
-                    <ListItemButton
-                        selected={activeTab === 'settings'}
-                        onClick={() => {
-                            setActiveTab('settings');
-                            if (isMobile) setMobileOpen(false);
-                        }}
-                        sx={{
-                            borderRadius: 2,
-                            '&.Mui-selected': {
-                                bgcolor: 'action.selected',
-                                borderLeft: '4px solid',
-                                borderColor: 'primary.main',
-                                paddingLeft: '12px'
-                            }
-                        }}
-                    >
-                        <ListItemIcon sx={{ minWidth: 32 }}>
-                            <Settings fontSize="small" color={activeTab === 'settings' ? "primary" : "action"} />
-                        </ListItemIcon>
-                        <ListItemText primary="设置" primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: activeTab === 'settings' ? 'bold' : 'normal' }} />
-                    </ListItemButton>
-                </ListItem>
-            </List>
-
-            <Box sx={{ px: 2, pb: 2 }}>
-                {/* Add Item Button Removed from Sidebar */}
-
-                <Divider sx={{ mb: 2 }} />
-
+            <div className="p-4 border-t bg-muted/20">
                 {user ? (
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ overflow: 'hidden' }}>
-                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.light', fontSize: '0.875rem' }}>
-                            {user.email ? user.email[0].toUpperCase() : 'U'}
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                            <AvatarFallback>{user.email ? user.email[0].toUpperCase() : 'U'}</AvatarFallback>
                         </Avatar>
-                        <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                            <Typography variant="body2" noWrap fontWeight="bold">
-                                {user.displayName || '用户'}
-                            </Typography>
-                            <Typography variant="caption" noWrap display="block" color="text.secondary">
-                                {user.email}
-                            </Typography>
-                        </Box>
-                        <IconButton size="small" onClick={handleSignOut}>
-                            <Logout fontSize="small" />
-                        </IconButton>
-                    </Stack>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{user.displayName || '用户'}</p>
+                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={handleSignOut} title="退出登录">
+                            <LogOut className="h-4 w-4" />
+                        </Button>
+                    </div>
                 ) : (
-                    <Button
-                        variant="outlined"
-                        fullWidth
-                        startIcon={<Login />}
-                        onClick={() => setShowAuthModal(true)}
-                    >
+                    <Button className="w-full" onClick={() => setShowAuthModal(true)}>
+                        <LogIn className="mr-2 h-4 w-4" />
                         登录
                     </Button>
                 )}
-            </Box>
-        </Box >
+            </div>
+        </div>
     );
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+        <div className="min-h-screen bg-background flex">
             {/* Mobile Header */}
-            {isMobile && (
-                <AppBar
-                    position="fixed"
-                    sx={{
-                        width: { md: `calc(100% - ${drawerWidth}px)` },
-                        ml: { md: `${drawerWidth}px` },
-                        bgcolor: 'background.paper',
-                        color: 'text.primary',
-                        boxShadow: 1
-                    }}
-                >
-                    <Toolbar>
-                        <IconButton
-                            color="inherit"
-                            aria-label="open drawer"
-                            edge="start"
-                            onClick={handleDrawerToggle}
-                            sx={{ mr: 2, display: { md: 'none' } }}
-                        >
-                            <MenuIcon />
-                        </IconButton>
-                        <Typography variant="h6" noWrap component="div" fontWeight="bold" sx={{ flexGrow: 1 }}>
-                            Inventory App
-                        </Typography>
-                        {user && (
-                            <IconButton color="inherit" onClick={() => setActiveTab('notifications')}>
-                                <Badge badgeContent={invitations.length} color="error">
-                                    <Notifications />
-                                </Badge>
-                            </IconButton>
-                        )}
-                    </Toolbar>
-                </AppBar>
-            )}
+            <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-16 border-b bg-background px-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon" className="-ml-2">
+                                <MenuIcon className="h-5 w-5" />
+                                <span className="sr-only">Toggle Sidebar</span>
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="left" className="p-0 w-[280px]">
+                            <SidebarContent />
+                        </SheetContent>
+                    </Sheet>
+                    <h1 className="font-bold text-lg">Inventory App</h1>
+                </div>
+                {user && (
+                    <Button variant="ghost" size="icon" onClick={() => setActiveTab('notifications')}>
+                        <div className="relative">
+                            <Bell className="h-5 w-5" />
+                            {invitations.length > 0 && (
+                                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+                            )}
+                        </div>
+                    </Button>
+                )}
+            </div>
 
-            {/* Sidebar Drawer */}
-            <Box
-                component="nav"
-                sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
-            >
-                {/* Mobile Temporary Drawer */}
-                <Drawer
-                    variant="temporary"
-                    open={mobileOpen}
-                    onClose={handleDrawerToggle}
-                    ModalProps={{
-                        keepMounted: true, // Better open performance on mobile.
-                    }}
-                    sx={{
-                        display: { xs: 'block', md: 'none' },
-                        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-                    }}
-                >
-                    {drawer}
-                </Drawer>
-
-                {/* Desktop Permanent Drawer */}
-                <Drawer
-                    variant="permanent"
-                    sx={{
-                        display: { xs: 'none', md: 'block' },
-                        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, borderRight: '1px solid #E5E7EB' },
-                    }}
-                    open
-                >
-                    {drawer}
-                </Drawer>
-            </Box>
+            {/* Desktop Sidebar */}
+            <aside className="hidden md:block w-64 h-screen sticky top-0">
+                <SidebarContent />
+            </aside>
 
             {/* Main Content */}
-            <Box
-                component="main"
-                sx={{
-                    flexGrow: 1,
-                    p: { xs: 2, md: 3 },
-                    width: { md: `calc(100% - ${drawerWidth}px)` },
-                    mt: isMobile ? 8 : 0
-                }}
-            >
+            <main className="flex-1 min-w-0 mt-16 md:mt-0 p-4 md:p-8 overflow-y-auto">
                 {children}
-            </Box>
-            {/* List Actions Menu */}
-            <Menu
-                anchorEl={menuAnchorEl}
-                open={Boolean(menuAnchorEl)}
-                onClose={handleListMenuClose}
-            >
-                <MenuItem onClick={handleSetDefault} disabled={selectedListForMenu && defaultListId === selectedListForMenu.id}>
-                    <ListItemIcon>
-                        <PushPin fontSize="small" color={selectedListForMenu && defaultListId === selectedListForMenu.id ? "action" : "primary"} />
-                    </ListItemIcon>
-                    <ListItemText>{selectedListForMenu && defaultListId === selectedListForMenu.id ? "已设为默认" : "设为默认"}</ListItemText>
-                </MenuItem>
-                <Divider />
-                <MenuItem onClick={handleOpenRenameModal}>
-                    <ListItemIcon>
-                        <Edit fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>重命名</ListItemText>
-                </MenuItem>
-                <MenuItem onClick={handleDeleteListClick} sx={{ color: 'error.main' }}>
-                    <ListItemIcon>
-                        <Delete fontSize="small" color="error" />
-                    </ListItemIcon>
-                    <ListItemText>删除</ListItemText>
-                </MenuItem>
-            </Menu>
+            </main>
 
             {/* Create/Rename Modal */}
             <ListActionModal
@@ -516,40 +398,25 @@ const Layout = ({
             />
 
             {/* Delete Confirmation Modal */}
-            <Dialog
-                open={deleteModalOpen}
-                onClose={() => setDeleteModalOpen(false)}
-                PaperProps={{
-                    sx: { borderRadius: 2, minWidth: 300 }
-                }}
-            >
-                <DialogTitle sx={{ fontWeight: 'bold', pb: 1 }}>
-                    确认删除
-                </DialogTitle>
+            <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
                 <DialogContent>
-                    <Typography>
-                        {deleteMessage}
-                    </Typography>
+                    <DialogHeader>
+                        <DialogTitle>确认删除</DialogTitle>
+                        <DialogDescription>
+                            {deleteMessage}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
+                            取消
+                        </Button>
+                        <Button variant="destructive" onClick={handleConfirmDelete}>
+                            删除
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button
-                        onClick={() => setDeleteModalOpen(false)}
-                        sx={{ color: 'text.secondary', borderRadius: 2 }}
-                    >
-                        取消
-                    </Button>
-                    <Button
-                        onClick={handleConfirmDelete}
-                        variant="contained"
-                        color="error"
-                        disableElevation
-                        sx={{ borderRadius: 2 }}
-                    >
-                        删除
-                    </Button>
-                </DialogActions>
             </Dialog>
-        </Box>
+        </div>
     );
 };
 

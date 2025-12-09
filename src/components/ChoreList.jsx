@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
-    Card, CardContent, Typography, IconButton, Chip, Stack, Box, Button, Grid,
-    Dialog, DialogTitle, DialogContent, DialogActions, TextField
-} from '@mui/material';
-import {
-    CheckCircle, Delete, Edit, AccessTime, EventRepeat
-} from '@mui/icons-material';
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CheckCircle2, Trash2, Repeat, Calendar } from 'lucide-react';
 
 const ChoreList = ({ chores, onComplete, onDelete, onEdit, user }) => {
     const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
@@ -23,9 +29,9 @@ const ChoreList = ({ chores, onComplete, onDelete, onEdit, user }) => {
         const diffTime = dueDate - today;
         const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (daysRemaining < 0) return { label: `逾期 ${Math.abs(daysRemaining)} 天`, color: 'error', days: daysRemaining };
-        if (daysRemaining === 0) return { label: '今天', color: 'warning', days: 0 };
-        return { label: `${daysRemaining} 天后`, color: 'success', days: daysRemaining };
+        if (daysRemaining < 0) return { label: `逾期 ${Math.abs(daysRemaining)} 天`, variant: 'destructive', days: daysRemaining };
+        if (daysRemaining === 0) return { label: '今天', variant: 'warning', days: 0 };
+        return { label: `${daysRemaining} 天后`, variant: 'secondary', days: daysRemaining };
     };
 
     const handleCompleteClick = (chore) => {
@@ -44,95 +50,98 @@ const ChoreList = ({ chores, onComplete, onDelete, onEdit, user }) => {
 
     if (chores.length === 0) {
         return (
-            <Box sx={{ py: 8, textAlign: 'center' }}>
-                <Typography color="text.secondary">
+            <div className="py-16 text-center">
+                <p className="text-muted-foreground">
                     没有家务任务，点击右上角添加
-                </Typography>
-            </Box>
+                </p>
+            </div>
         );
     }
 
     return (
         <>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 3 }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {chores.map(chore => {
                     const status = getStatus(chore.nextDue);
+                    const isOverdue = status.variant === 'destructive';
+                    const isToday = status.variant === 'warning';
+
                     return (
-                        <Card key={chore.id} variant="outlined" sx={{ borderRadius: 2, position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                            <CardContent sx={{ flexGrow: 1, p: 3, '&:last-child': { pb: 3 } }}>
-                                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                                    <Box>
-                                        <Typography variant="h6" fontWeight="bold" sx={{ lineHeight: 1.3 }}>
+                        <Card key={chore.id} className="h-full flex flex-col relative overflow-hidden transition-all hover:shadow-md">
+                            {isOverdue && <div className="absolute top-0 left-0 w-1 h-full bg-destructive" />}
+                            {isToday && <div className="absolute top-0 left-0 w-1 h-full bg-orange-500" />}
+
+                            <CardContent className="flex-grow p-4 space-y-4">
+                                <div className="flex justify-between items-start gap-2">
+                                    <div className="space-y-1">
+                                        <h4 className="font-semibold text-base leading-tight">
                                             {chore.name}
-                                        </Typography>
-                                        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 1, color: 'text.secondary' }}>
-                                            <EventRepeat fontSize="small" sx={{ fontSize: '1rem' }} />
-                                            <Typography variant="body2">
-                                                每 {chore.frequency} 天
-                                            </Typography>
-                                        </Stack>
-                                    </Box>
-                                    <Chip
-                                        label={status.label}
-                                        color={status.color}
-                                        size="small"
-                                        variant={status.color === 'success' ? 'outlined' : 'filled'}
-                                        sx={{ height: 24, fontSize: '0.75rem', fontWeight: 'bold' }}
-                                    />
-                                </Stack>
+                                        </h4>
+                                        <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                                            <Repeat className="h-3.5 w-3.5" />
+                                            <span>每 {chore.frequency} 天</span>
+                                        </div>
+                                    </div>
+                                    <Badge
+                                        variant={status.variant === 'warning' ? 'secondary' : status.variant}
+                                        className={`${status.variant === 'warning' ? 'bg-orange-500/10 text-orange-600 hover:bg-orange-500/20' : ''} whitespace-nowrap`}
+                                    >
+                                        {status.label}
+                                    </Badge>
+                                </div>
 
-                                <Typography variant="caption" display="block" sx={{ mt: 3, mb: 3, color: 'text.secondary' }}>
-                                    上次完成: {chore.lastCompleted ? new Date(chore.lastCompleted).toLocaleDateString() : '从未'}
-                                </Typography>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
+                                    <Calendar className="h-3.5 w-3.5 opacity-70" />
+                                    <span>上次完成: {chore.lastCompleted ? new Date(chore.lastCompleted).toLocaleDateString() : '从未'}</span>
+                                </div>
 
-                                <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center" sx={{ mt: 'auto' }}>
-                                    <IconButton
-                                        size="small"
+                                <div className="flex justify-end gap-2 pt-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                         onClick={() => onDelete(chore.id)}
                                         disabled={!user}
-                                        sx={{ color: 'text.disabled' }}
                                     >
-                                        <Delete fontSize="small" />
-                                    </IconButton>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
                                     <Button
-                                        variant="contained"
-                                        size="small"
-                                        startIcon={<CheckCircle />}
+                                        size="sm"
+                                        className="h-8"
                                         onClick={() => handleCompleteClick(chore)}
                                         disabled={!user}
-                                        disableElevation
-                                        color="primary"
-                                        sx={{ borderRadius: 2, px: 2 }}
                                     >
+                                        <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
                                         完成
                                     </Button>
-                                </Stack>
+                                </div>
                             </CardContent>
                         </Card>
                     );
                 })}
-            </Box>
+            </div>
 
-            <Dialog open={completeDialogOpen} onClose={() => setCompleteDialogOpen(false)}>
-                <DialogTitle>完成任务</DialogTitle>
+            <Dialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
                 <DialogContent>
-                    <Typography variant="body2" sx={{ mb: 2 }}>
-                        请确认完成日期：
-                    </Typography>
-                    <TextField
-                        type="date"
-                        fullWidth
-                        value={completionDate}
-                        onChange={(e) => setCompletionDate(e.target.value)}
-                        InputLabelProps={{
-                            shrink: true,
-                        }}
-                    />
+                    <DialogHeader>
+                        <DialogTitle>完成任务</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="date">请确认完成日期</Label>
+                            <Input
+                                id="date"
+                                type="date"
+                                value={completionDate}
+                                onChange={(e) => setCompletionDate(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setCompleteDialogOpen(false)}>取消</Button>
+                        <Button onClick={handleConfirmComplete}>确认完成</Button>
+                    </DialogFooter>
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setCompleteDialogOpen(false)}>取消</Button>
-                    <Button onClick={handleConfirmComplete} variant="contained">确认完成</Button>
-                </DialogActions>
             </Dialog>
         </>
     );

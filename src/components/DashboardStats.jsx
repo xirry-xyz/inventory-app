@@ -1,38 +1,38 @@
 import React from 'react';
-import { Card, CardContent, Typography, Stack, Box } from '@mui/material';
+import { Card, CardContent } from "@/components/ui/card";
 
 const DashboardStats = ({ totalItems, restockCount, expiringCount }) => {
     return (
-        <Stack direction="row" spacing={{ xs: 1, sm: 2 }} sx={{ width: '100%' }}>
-            <Box sx={{ flex: 1 }}>
-                <Card sx={{ height: '100%' }}>
-                    <CardContent sx={{ py: 1.5, px: 1, '&:last-child': { pb: 1.5 }, textAlign: 'center' }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>总物品</Typography>
-                        <Typography variant="h6" fontWeight="bold" sx={{ lineHeight: 1 }}>{totalItems}</Typography>
+        <div className="flex w-full gap-2 sm:gap-4">
+            <div className="flex-1">
+                <Card className="h-full">
+                    <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+                        <span className="text-xs text-muted-foreground block mb-1">总物品</span>
+                        <span className="text-xl font-bold leading-none">{totalItems}</span>
                     </CardContent>
                 </Card>
-            </Box>
-            <Box sx={{ flex: 1 }}>
-                <Card sx={{ height: '100%' }}>
-                    <CardContent sx={{ py: 1.5, px: 1, '&:last-child': { pb: 1.5 }, textAlign: 'center' }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>需补货</Typography>
-                        <Typography variant="h6" fontWeight="bold" sx={{ lineHeight: 1 }} color={restockCount > 0 ? "error.main" : "text.primary"}>
+            </div>
+            <div className="flex-1">
+                <Card className="h-full">
+                    <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+                        <span className="text-xs text-muted-foreground block mb-1">需补货</span>
+                        <span className={`text-xl font-bold leading-none ${restockCount > 0 ? "text-destructive" : ""}`}>
                             {restockCount}
-                        </Typography>
+                        </span>
                     </CardContent>
                 </Card>
-            </Box>
-            <Box sx={{ flex: 1 }}>
-                <Card sx={{ height: '100%' }}>
-                    <CardContent sx={{ py: 1.5, px: 1, '&:last-child': { pb: 1.5 }, textAlign: 'center' }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>即将过期</Typography>
-                        <Typography variant="h6" fontWeight="bold" sx={{ lineHeight: 1 }} color={expiringCount > 0 ? "warning.main" : "text.primary"}>
+            </div>
+            <div className="flex-1">
+                <Card className="h-full">
+                    <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+                        <span className="text-xs text-muted-foreground block mb-1">即将过期</span>
+                        <span className={`text-xl font-bold leading-none ${expiringCount > 0 ? "text-yellow-600" : ""}`}>
                             {expiringCount}
-                        </Typography>
+                        </span>
                     </CardContent>
                 </Card>
-            </Box>
-        </Stack>
+            </div>
+        </div>
     );
 };
 

@@ -1,16 +1,13 @@
 import React from 'react';
 import {
-    Box,
-    Typography,
     Card,
     CardContent,
-    Stack,
-    Button
-} from '@mui/material';
-import { Logout, Login } from '@mui/icons-material';
-// Using Lucide icons as they were used in App.jsx, or switch to MUI icons for consistency.
-// App.jsx used: import { LogOut, Chrome } from 'lucide-react';
-import { LogOut, Chrome } from 'lucide-react';
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { LogOut, Chrome, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const SettingsPage = ({
     user,
@@ -26,50 +23,62 @@ const SettingsPage = ({
 
     return (
         <Card>
-            <CardContent sx={{ p: 4 }}>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>用户与应用设置</Typography>
-                <Stack spacing={3}>
-                    <Box sx={{ p: 3, bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>登录状态</Typography>
-                        {isGoogleUser ? (
-                            <>
-                                <Typography variant="h6" color="success.main" fontWeight="bold">已通过 Google 登录</Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>用户: {user.email || user.displayName || 'Google 用户'}</Typography>
-                                <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5, wordBreak: 'break-all' }}>ID: {userId}</Typography>
+            <CardHeader>
+                <CardTitle>用户与应用设置</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="bg-card border rounded-lg p-6 space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground">登录状态</h3>
+                    {isGoogleUser ? (
+                        <>
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2 text-green-600 font-bold text-lg">
+                                    <CheckCircle2 className="h-5 w-5" />
+                                    已通过 Google 登录
+                                </div>
+                                <p className="text-sm text-muted-foreground">用户: {user.email || user.displayName || 'Google 用户'}</p>
+                                <p className="text-xs text-muted-foreground/50 break-all font-mono">ID: {userId}</p>
+                            </div>
+                            <Button
+                                variant="destructive"
+                                onClick={handleSignOut}
+                                className="mt-4"
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                注销
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2 text-destructive font-bold text-lg">
+                                    <AlertCircle className="h-5 w-5" />
+                                    未登录
+                                </div>
+                                <p className="text-sm text-muted-foreground">当前无法同步数据，请登录。</p>
+                            </div>
+                            {!configError && (
                                 <Button
-                                    variant="outlined"
-                                    color="error"
-                                    startIcon={<LogOut size={16} />}
-                                    onClick={handleSignOut}
-                                    sx={{ mt: 3 }}
+                                    onClick={() => setShowAuthModal(true)}
+                                    className="mt-4"
                                 >
-                                    注销
+                                    <Chrome className="mr-2 h-4 w-4" />
+                                    登录以同步
                                 </Button>
-                            </>
-                        ) : (
-                            <>
-                                <Typography variant="h6" color="error.main" fontWeight="bold">未登录</Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>当前无法同步数据，请登录。</Typography>
-                                {!configError && (
-                                    <Button
-                                        variant="contained"
-                                        startIcon={<Chrome size={16} />}
-                                        onClick={() => setShowAuthModal(true)}
-                                        sx={{ mt: 3 }}
-                                    >
-                                        登录以同步
-                                    </Button>
-                                )}
-                            </>
-                        )}
-                    </Box>
-                    {configError && (
-                        <Box sx={{ p: 3, bgcolor: 'error.lighter', color: 'error.dark', borderRadius: 2 }}>
-                            <Typography fontWeight="bold">配置错误：</Typography>
-                            <Typography>{configError}</Typography>
-                        </Box>
+                            )}
+                        </>
                     )}
-                </Stack>
+                </div>
+
+                {configError && (
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>配置错误</AlertTitle>
+                        <AlertDescription>
+                            {configError}
+                        </AlertDescription>
+                    </Alert>
+                )}
             </CardContent>
         </Card>
     );

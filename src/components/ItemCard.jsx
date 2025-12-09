@@ -1,11 +1,12 @@
 import React from 'react';
 import {
-    Card, CardContent, Typography, IconButton, Box, Chip, Stack, Divider
-} from '@mui/material';
+    Card, CardContent, CardFooter
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
-    Add, Remove, Delete, Warning, CheckCircle, EventBusy, Schedule, CalendarToday, Autorenew
-} from '@mui/icons-material';
-import {
+    Plus, Minus, Trash2, AlertTriangle, CheckCircle, CalendarClock, History, Clock,
     ShoppingCart, Package, Heart, Leaf, Wrench, Sprout, Cat
 } from 'lucide-react';
 
@@ -59,131 +60,109 @@ const ItemCard = ({ item, updateStock, deleteItem, user, markAsReplaced, isMobil
     const periodicInfo = getPeriodicStatus(item);
 
     return (
-        <Card
-            variant="outlined"
-            sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'relative',
-                transition: 'all 0.2s',
-                '&:hover': {
-                    borderColor: 'primary.main',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                }
-            }}
-        >
-            <CardContent sx={{ flexGrow: 1, p: 2, '&:last-child': { pb: 2 } }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                    <Box>
-                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom component="div">
+        <Card className="h-full flex flex-col relative transition-all hover:border-primary/50 hover:shadow-md">
+            <CardContent className="flex-grow p-4 space-y-3">
+                <div className="flex justify-between items-start gap-2">
+                    <div className="space-y-1">
+                        <h4 className="font-semibold text-base leading-none">
                             {item.name}
-                        </Typography>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                            <Box sx={{ color: 'text.secondary', display: 'flex' }}>
-                                {categories[item.category] || categories['其他']}
-                            </Box>
-                            <Typography variant="body2" color="text.secondary">
-                                {item.category}
-                            </Typography>
-                        </Stack>
-                    </Box>
-                    {/* Status Chip & Delete Button */}
-                    <Stack direction="row" alignItems="center" spacing={1}>
+                        </h4>
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                            {categories[item.category] || categories['其他']}
+                            <span>{item.category}</span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-1">
                         {needsRestock ? (
-                            <Chip label="需补货" color="error" size="small" sx={{ height: 24, fontWeight: 'bold' }} />
+                            <Badge variant="destructive" className="h-6 font-bold px-1.5">需补货</Badge>
                         ) : (
-                            <Chip label="充足" color="success" size="small" variant="outlined" sx={{ height: 24 }} />
+                            <Badge variant="outline" className="h-6 text-green-600 border-green-200 px-1.5">充足</Badge>
                         )}
-                        <IconButton
-                            size="small"
+                        <Button
+                            size="icon"
+                            variant="ghost"
+                            className={`h-7 w-7 text-muted-foreground hover:text-destructive ${isMobile ? '' : 'sm:opacity-0 sm:group-hover:opacity-100 transition-opacity'}`}
                             onClick={() => deleteItem(item.id)}
                             disabled={!isUserLoggedIn}
-                            sx={{
-                                color: 'text.disabled',
-                                '&:hover': { color: 'error.main' },
-                                opacity: isMobile ? 1 : 0,
-                                transition: 'opacity 0.2s',
-                                '.MuiCard-root:hover &': { opacity: 1 },
-                                p: 0.5
-                            }}
                         >
-                            <Delete fontSize="small" />
-                        </IconButton>
-                    </Stack>
-                </Stack>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
 
-                <Divider sx={{ my: 1.5 }} />
+                <Separator />
 
-                <Stack spacing={2}>
+                <div className="space-y-3">
                     {/* Stock Control */}
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
-                        <Typography variant="body2" color="text.secondary">当前库存</Typography>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                            <IconButton
-                                size="small"
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">当前库存</span>
+                        <div className="flex items-center gap-1">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-7 w-7"
                                 onClick={() => updateStock(item.id, item.currentStock - 1)}
                                 disabled={!isUserLoggedIn}
-                                sx={{ border: '1px solid', borderColor: 'divider', p: 0.5 }}
                             >
-                                <Remove fontSize="small" />
-                            </IconButton>
-                            <Typography variant="body1" fontWeight="bold" sx={{ minWidth: 24, textAlign: 'center' }}>
-                                {item.currentStock}
-                            </Typography>
-                            <IconButton
-                                size="small"
+                                <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="font-bold min-w-[20px] text-center">{item.currentStock}</span>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-7 w-7"
                                 onClick={() => updateStock(item.id, item.currentStock + 1)}
                                 disabled={!isUserLoggedIn}
-                                sx={{ border: '1px solid', borderColor: 'divider', p: 0.5 }}
                             >
-                                <Add fontSize="small" />
-                            </IconButton>
-                        </Stack>
-                    </Stack>
+                                <Plus className="h-3 w-3" />
+                            </Button>
+                        </div>
+                    </div>
 
                     {/* Expiry / Periodic Info */}
                     {(expInfo || periodicInfo) && (
-                        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ bgcolor: 'action.hover', p: 1, borderRadius: 1 }}>
-                            <Stack direction="row" alignItems="center" spacing={1}>
+                        <div className="flex items-center justify-between bg-muted/50 p-2 rounded-md">
+                            <div className="flex items-center gap-2">
                                 {expInfo ? (
                                     <>
-                                        {expInfo.status === 'expired' ? <EventBusy fontSize="small" color="error" /> :
-                                            expInfo.status === 'warning' ? <Schedule fontSize="small" color="warning" /> :
-                                                <CalendarToday fontSize="small" color="success" />}
-                                        <Typography variant="body2" color={expInfo.status === 'expired' ? 'error.main' : expInfo.status === 'warning' ? 'warning.main' : 'text.primary'}>
+                                        {expInfo.status === 'expired' ? <AlertTriangle className="h-4 w-4 text-destructive" /> :
+                                            expInfo.status === 'warning' ? <Clock className="h-4 w-4 text-orange-500" /> :
+                                                <CalendarClock className="h-4 w-4 text-green-500" />}
+                                        <span className={`text-sm ${expInfo.status === 'expired' ? 'text-destructive font-medium' : expInfo.status === 'warning' ? 'text-orange-500' : 'text-foreground'}`}>
                                             {expInfo.status === 'expired' ? `已过期 ${expInfo.days} 天` :
                                                 expInfo.status === 'warning' ? `${expInfo.days} 天后过期` :
                                                     item.expirationDate}
-                                        </Typography>
+                                        </span>
                                     </>
                                 ) : (
                                     <>
-                                        {periodicInfo.status === 'expired' ? <Autorenew fontSize="small" color="error" /> :
-                                            periodicInfo.status === 'warning' ? <Autorenew fontSize="small" color="warning" /> :
-                                                <Autorenew fontSize="small" color="success" />}
-                                        <Typography variant="body2" color={periodicInfo.status === 'expired' ? 'error.main' : periodicInfo.status === 'warning' ? 'warning.main' : 'text.primary'}>
+                                        {periodicInfo.status === 'expired' ? <AlertTriangle className="h-4 w-4 text-destructive" /> :
+                                            periodicInfo.status === 'warning' ? <Clock className="h-4 w-4 text-orange-500" /> :
+                                                <History className="h-4 w-4 text-green-500" />}
+                                        <span className={`text-sm ${periodicInfo.status === 'expired' ? 'text-destructive font-medium' : periodicInfo.status === 'warning' ? 'text-orange-500' : 'text-foreground'}`}>
                                             {periodicInfo.status === 'expired' ? `超期 ${periodicInfo.days} 天` :
                                                 periodicInfo.status === 'warning' ? `${periodicInfo.days} 天后更换` :
                                                     `${periodicInfo.days} 天后更换`}
-                                        </Typography>
+                                        </span>
                                     </>
                                 )}
-                            </Stack>
+                            </div>
                             {periodicInfo && (
-                                <IconButton
-                                    size="small"
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-6 w-6 ml-1 bg-background shadow-sm"
                                     onClick={() => markAsReplaced(item.id)}
                                     disabled={!isUserLoggedIn}
                                     title="标记为已更换"
-                                    sx={{ p: 0.5, bgcolor: 'background.paper' }}
                                 >
-                                    <CheckCircle fontSize="small" color="action" />
-                                </IconButton>
+                                    <CheckCircle className="h-4 w-4 text-muted-foreground hover:text-green-600" />
+                                </Button>
                             )}
-                        </Stack>
+                        </div>
                     )}
-                </Stack>
+                </div>
             </CardContent>
         </Card>
     );

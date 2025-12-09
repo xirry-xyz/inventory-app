@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import {
-    Box, Paper, Typography, IconButton, Grid, Badge, Tooltip, Popover, List, ListItem, ListItemText, Chip, Stack
-} from '@mui/material';
-import { ChevronLeft, ChevronRight, CheckCircle } from '@mui/icons-material';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 
 const DAYS_OF_WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 
@@ -56,7 +56,7 @@ const ChoreCalendar = ({ chores, onRemoveCompletion }) => {
 
         // Empty cells for days before start of month
         for (let i = 0; i < firstDay; i++) {
-            calendarDays.push(<Box key={`empty-${i}`} />);
+            calendarDays.push(<div key={`empty-${i}`} />);
         }
 
         // Days of the month
@@ -68,45 +68,24 @@ const ChoreCalendar = ({ chores, onRemoveCompletion }) => {
             const isSelected = selectedDate && selectedDate.toDateString() === dateKey;
 
             calendarDays.push(
-                <Box key={day} sx={{ textAlign: 'center', mb: 1 }}>
-                    <Box
+                <div key={day} className="text-center mb-1">
+                    <div
                         onClick={() => handleDateClick(day)}
-                        sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto',
-                            cursor: 'pointer',
-                            bgcolor: isSelected ? 'primary.main' : isToday ? 'primary.light' : 'transparent',
-                            color: isSelected ? 'white' : isToday ? 'white' : 'text.primary',
-                            border: isToday && !isSelected ? '1px solid' : 'none',
-                            borderColor: 'primary.main',
-                            position: 'relative',
-                            '&:hover': {
-                                bgcolor: isSelected ? 'primary.dark' : 'action.hover'
-                            }
-                        }}
+                        className={`
+                            w-9 h-9 rounded-full flex items-center justify-center mx-auto cursor-pointer relative
+                            ${isSelected ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}
+                            ${!isSelected && isToday ? 'bg-secondary text-secondary-foreground ring-1 ring-primary' : ''}
+                            ${!isSelected && !isToday ? 'hover:bg-muted' : ''}
+                        `}
                     >
-                        <Typography variant="body2" fontWeight={isToday || isSelected ? 'bold' : 'normal'}>
+                        <span className={`text-sm ${isToday || isSelected ? 'font-bold' : 'font-normal'}`}>
                             {day}
-                        </Typography>
+                        </span>
                         {completedChores.length > 0 && (
-                            <Box
-                                sx={{
-                                    position: 'absolute',
-                                    bottom: 2,
-                                    width: 4,
-                                    height: 4,
-                                    borderRadius: '50%',
-                                    bgcolor: isSelected ? 'white' : 'success.main'
-                                }}
-                            />
+                            <div className={`absolute bottom-0.5 w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-green-500'}`} />
                         )}
-                    </Box>
-                </Box>
+                    </div>
+                </div>
             );
         }
 
@@ -117,64 +96,75 @@ const ChoreCalendar = ({ chores, onRemoveCompletion }) => {
     const selectedChores = selectedDate ? (completionMap[selectedDate.toDateString()] || []) : [];
 
     return (
-        <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }} variant="outlined">
-            {/* Header */}
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-                <IconButton onClick={handlePrevMonth} size="small">
-                    <ChevronLeft />
-                </IconButton>
-                <Typography variant="subtitle1" fontWeight="bold">
-                    {currentDate.getFullYear()}年 {currentDate.getMonth() + 1}月
-                </Typography>
-                <IconButton onClick={handleNextMonth} size="small">
-                    <ChevronRight />
-                </IconButton>
-            </Stack>
+        <Card className="mb-6">
+            <CardContent className="p-4">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                    <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="font-semibold text-lg">
+                        {currentDate.getFullYear()}年 {currentDate.getMonth() + 1}月
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={handleNextMonth}>
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
 
-            {/* Days of Week */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 1 }}>
-                {DAYS_OF_WEEK.map(day => (
-                    <Box key={day} sx={{ textAlign: 'center' }}>
-                        <Typography variant="caption" color="text.secondary">
-                            {day}
-                        </Typography>
-                    </Box>
-                ))}
-            </Box>
+                {/* Days of Week */}
+                <div className="grid grid-cols-7 mb-2">
+                    {DAYS_OF_WEEK.map(day => (
+                        <div key={day} className="text-center">
+                            <span className="text-xs text-muted-foreground">
+                                {day}
+                            </span>
+                        </div>
+                    ))}
+                </div>
 
-            {/* Calendar Grid */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
-                {renderCalendarDays()}
-            </Box>
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-y-1">
+                    {renderCalendarDays()}
+                </div>
 
-            {/* Selected Date Details */}
-            {selectedDate && (
-                <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                        {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日 完成的任务:
-                    </Typography>
-                    {selectedChores.length > 0 ? (
-                        <Stack direction="row" flexWrap="wrap" gap={1}>
-                            {selectedChores.map((chore, index) => (
-                                <Chip
-                                    key={`${chore.id}-${index}`}
-                                    label={chore.name}
-                                    size="small"
-                                    color="success"
-                                    variant="outlined"
-                                    icon={<CheckCircle sx={{ width: 14, height: 14 }} />}
-                                    onDelete={() => onRemoveCompletion(chore.id, selectedDate)}
-                                />
-                            ))}
-                        </Stack>
-                    ) : (
-                        <Typography variant="caption" color="text.secondary">
-                            无完成记录
-                        </Typography>
-                    )}
-                </Box>
-            )}
-        </Paper>
+                {/* Selected Date Details */}
+                {selectedDate && (
+                    <div className="mt-4 pt-4 border-t">
+                        <div className="text-sm font-medium mb-2">
+                            {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日 完成的任务:
+                        </div>
+                        {selectedChores.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                                {selectedChores.map((chore, index) => (
+                                    <Badge
+                                        key={`${chore.id}-${index}`}
+                                        variant="outline"
+                                        className="pl-2 pr-1 py-1 flex items-center gap-1 border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 transition-colors cursor-default"
+                                    >
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        {chore.name}
+                                        <button
+                                            className="ml-1 hover:text-destructive focus:outline-none rounded-full p-0.5"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onRemoveCompletion(chore.id, selectedDate);
+                                            }}
+                                        >
+                                            <span className="sr-only">Remove</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                        </button>
+                                    </Badge>
+                                ))}
+                            </div>
+                        ) : (
+                            <span className="text-xs text-muted-foreground">
+                                无完成记录
+                            </span>
+                        )}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
     );
 };
 

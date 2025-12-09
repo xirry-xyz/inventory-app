@@ -1,13 +1,18 @@
 import React from 'react';
 import {
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Paper, IconButton, Chip, Typography, Box, Stack
-} from '@mui/material';
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
 import {
-    Add, Remove, Delete, Edit, Warning, CheckCircle, EventBusy, Schedule, CalendarToday, Autorenew
-} from '@mui/icons-material';
-import {
-    ShoppingCart, Package, Heart, Leaf, Wrench, Sprout, Cat
+    ShoppingCart, Package, Heart, Leaf, Wrench, Sprout, Cat,
+    Plus, Minus, Trash2, AlertTriangle, CheckCircle, CalendarClock, History, Clock
 } from 'lucide-react';
 
 const categories = {
@@ -56,19 +61,19 @@ const InventoryTable = ({ items, updateStock, deleteItem, user, markAsReplaced }
     };
 
     return (
-        <TableContainer sx={{ borderRadius: 0 }}>
-            <Table sx={{ minWidth: 650 }} aria-label="inventory table">
-                <TableHead sx={{ bgcolor: 'background.default' }}>
+        <div className="rounded-md border">
+            <Table>
+                <TableHeader>
                     <TableRow>
-                        <TableCell>物品名称</TableCell>
-                        <TableCell>分类</TableCell>
-                        <TableCell align="center">库存状态</TableCell>
-                        <TableCell align="center">当前库存</TableCell>
-                        <TableCell align="center">安全库存</TableCell>
-                        <TableCell>过期时间</TableCell>
-                        <TableCell align="right">操作</TableCell>
+                        <TableHead>物品名称</TableHead>
+                        <TableHead>分类</TableHead>
+                        <TableHead className="text-center">库存状态</TableHead>
+                        <TableHead className="text-center">当前库存</TableHead>
+                        <TableHead className="text-center">安全库存</TableHead>
+                        <TableHead>过期/更换</TableHead>
+                        <TableHead className="text-right">操作</TableHead>
                     </TableRow>
-                </TableHead>
+                </TableHeader>
                 <TableBody>
                     {items.map((item) => {
                         const needsRestock = item.currentStock <= item.safetyStock;
@@ -76,135 +81,113 @@ const InventoryTable = ({ items, updateStock, deleteItem, user, markAsReplaced }
                         const periodicInfo = getPeriodicStatus(item);
 
                         return (
-                            <TableRow
-                                key={item.id}
-                                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                            >
-                                <TableCell component="th" scope="row">
-                                    <Typography variant="subtitle2" fontWeight="bold">
-                                        {item.name}
-                                    </Typography>
+                            <TableRow key={item.id}>
+                                <TableCell className="font-medium">
+                                    {item.name}
                                 </TableCell>
                                 <TableCell>
-                                    <Stack direction="row" alignItems="center" spacing={1}>
-                                        <Box sx={{ color: 'text.secondary', display: 'flex' }}>
-                                            {categories[item.category] || categories['其他']}
-                                        </Box>
-                                        <Typography variant="body2">
-                                            {item.category}
-                                        </Typography>
-                                    </Stack>
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        {categories[item.category] || categories['其他']}
+                                        <span className="text-sm">{item.category}</span>
+                                    </div>
                                 </TableCell>
-                                <TableCell align="center">
+                                <TableCell className="text-center">
                                     {needsRestock ? (
-                                        <Chip
-                                            label="需补货"
-                                            color="error"
-                                            size="small"
-                                            sx={{ height: 24, fontWeight: 'bold' }}
-                                        />
+                                        <Badge variant="destructive" className="font-bold">
+                                            需补货
+                                        </Badge>
                                     ) : (
-                                        <Chip
-                                            label="充足"
-                                            color="success"
-                                            size="small"
-                                            variant="outlined"
-                                            sx={{ height: 24 }}
-                                        />
+                                        <Badge variant="outline" className="text-green-600 border-green-200">
+                                            充足
+                                        </Badge>
                                     )}
                                 </TableCell>
-                                <TableCell align="center">
-                                    <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
-                                        <IconButton
-                                            size="small"
+                                <TableCell className="text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-6 w-6"
                                             onClick={() => updateStock(item.id, item.currentStock - 1)}
                                             disabled={!isUserLoggedIn}
-                                            sx={{ border: '1px solid', borderColor: 'divider', p: 0.5 }}
                                         >
-                                            <Remove fontSize="small" />
-                                        </IconButton>
-                                        <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 24, textAlign: 'center' }}>
-                                            {item.currentStock}
-                                        </Typography>
-                                        <IconButton
-                                            size="small"
+                                            <Minus className="h-3 w-3" />
+                                        </Button>
+                                        <span className="font-bold min-w-[20px] text-center">{item.currentStock}</span>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-6 w-6"
                                             onClick={() => updateStock(item.id, item.currentStock + 1)}
                                             disabled={!isUserLoggedIn}
-                                            sx={{ border: '1px solid', borderColor: 'divider', p: 0.5 }}
                                         >
-                                            <Add fontSize="small" />
-                                        </IconButton>
-                                    </Stack>
+                                            <Plus className="h-3 w-3" />
+                                        </Button>
+                                    </div>
                                 </TableCell>
-                                <TableCell align="center">
+                                <TableCell className="text-center text-muted-foreground">
                                     {item.safetyStock}
                                 </TableCell>
                                 <TableCell>
                                     {expInfo ? (
-                                        <Stack direction="row" alignItems="center" spacing={1}>
-                                            {expInfo.status === 'expired' ? <EventBusy fontSize="small" color="error" /> :
-                                                expInfo.status === 'warning' ? <Schedule fontSize="small" color="warning" /> :
-                                                    <CalendarToday fontSize="small" color="success" />}
-
-                                            <Typography
-                                                variant="body2"
-                                                color={
-                                                    expInfo.status === 'expired' ? 'error.main' :
-                                                        expInfo.status === 'warning' ? 'warning.main' : 'text.primary'
-                                                }
-                                            >
+                                        <div className="flex items-center gap-2">
+                                            {expInfo.status === 'expired' ? <AlertTriangle className="h-4 w-4 text-destructive" /> :
+                                                expInfo.status === 'warning' ? <Clock className="h-4 w-4 text-orange-500" /> :
+                                                    <CalendarClock className="h-4 w-4 text-green-500" />}
+                                            <span className={
+                                                expInfo.status === 'expired' ? 'text-destructive font-medium' :
+                                                    expInfo.status === 'warning' ? 'text-orange-500' : 'text-muted-foreground'
+                                            }>
                                                 {expInfo.status === 'expired' ? `已过期 ${expInfo.days} 天` :
                                                     expInfo.status === 'warning' ? `${expInfo.days} 天后` :
                                                         item.expirationDate}
-                                            </Typography>
-                                        </Stack>
+                                            </span>
+                                        </div>
                                     ) : periodicInfo ? (
-                                        <Stack direction="row" alignItems="center" spacing={1}>
-                                            {periodicInfo.status === 'expired' ? <Autorenew fontSize="small" color="error" /> :
-                                                periodicInfo.status === 'warning' ? <Autorenew fontSize="small" color="warning" /> :
-                                                    <Autorenew fontSize="small" color="success" />}
+                                        <div className="flex items-center gap-2">
+                                            {periodicInfo.status === 'expired' ? <AlertTriangle className="h-4 w-4 text-destructive" /> :
+                                                periodicInfo.status === 'warning' ? <Clock className="h-4 w-4 text-orange-500" /> :
+                                                    <History className="h-4 w-4 text-green-500" />}
 
-                                            <Typography
-                                                variant="body2"
-                                                color={
-                                                    periodicInfo.status === 'expired' ? 'error.main' :
-                                                        periodicInfo.status === 'warning' ? 'warning.main' : 'text.primary'
-                                                }
-                                            >
+                                            <span className={`text-sm ${periodicInfo.status === 'expired' ? 'text-destructive font-medium' :
+                                                    periodicInfo.status === 'warning' ? 'text-orange-500' : 'text-muted-foreground'
+                                                }`}>
                                                 {periodicInfo.status === 'expired' ? `超期 ${periodicInfo.days} 天` :
-                                                    periodicInfo.status === 'warning' ? `${periodicInfo.days} 天后更换` :
-                                                        `${periodicInfo.days} 天后更换`}
-                                            </Typography>
-                                            <IconButton
-                                                size="small"
+                                                    periodicInfo.status === 'warning' ? `${periodicInfo.days} 天后` :
+                                                        `${periodicInfo.days} 天后`}
+                                            </span>
+                                            <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                className="h-6 w-6 ml-1"
                                                 onClick={() => markAsReplaced(item.id)}
                                                 disabled={!isUserLoggedIn}
                                                 title="标记为已更换"
-                                                sx={{ p: 0.5 }}
                                             >
-                                                <CheckCircle fontSize="small" color="action" />
-                                            </IconButton>
-                                        </Stack>
+                                                <CheckCircle className="h-4 w-4 text-muted-foreground hover:text-green-600" />
+                                            </Button>
+                                        </div>
                                     ) : (
-                                        <Typography variant="body2" color="text.secondary">-</Typography>
+                                        <span className="text-muted-foreground text-sm pl-2">-</span>
                                     )}
                                 </TableCell>
-                                <TableCell align="right">
-                                    <IconButton
-                                        size="small"
+                                <TableCell className="text-right">
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                         onClick={() => deleteItem(item.id)}
                                         disabled={!isUserLoggedIn}
-                                        color="error"
                                     >
-                                        <Delete fontSize="small" />
-                                    </IconButton>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                         );
                     })}
                 </TableBody>
             </Table>
-        </TableContainer>
+        </div>
     );
 };
 

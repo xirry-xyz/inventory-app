@@ -1,25 +1,8 @@
 import React from 'react';
-import {
-    Box,
-    Typography,
-    Paper,
-    List,
-    ListItem,
-    ListItemText,
-    ListItemAvatar,
-    Avatar,
-    IconButton,
-    Button,
-    Stack,
-    Divider,
-    Container
-} from '@mui/material';
-import {
-    Check as CheckIcon,
-    Close as CloseIcon,
-    Mail as MailIcon,
-    NotificationsNone as EmptyIcon
-} from '@mui/icons-material';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Check, X, Mail, BellOff } from "lucide-react";
 
 const NotificationPage = ({ invitations, acceptInvite, declineInvite, showStatus }) => {
     const handleAccept = async (invite) => {
@@ -31,75 +14,59 @@ const NotificationPage = ({ invitations, acceptInvite, declineInvite, showStatus
     };
 
     return (
-        <Container maxWidth="md">
-            <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
-                消息中心
-            </Typography>
+        <div className="container max-w-3xl mx-auto py-6 space-y-6">
+            <h2 className="text-2xl font-bold tracking-tight">消息中心</h2>
 
             {invitations.length === 0 ? (
-                <Paper sx={{ p: 4, textAlign: 'center' }}>
-                    <EmptyIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                    <Typography color="text.secondary">
-                        暂无新消息
-                    </Typography>
-                </Paper>
+                <Card>
+                    <CardContent className="flex flex-col items-center justify-center p-12 text-muted-foreground">
+                        <BellOff className="h-12 w-12 mb-4 opacity-20" />
+                        <p>暂无新消息</p>
+                    </CardContent>
+                </Card>
             ) : (
-                <Paper>
-                    <List disablePadding>
-                        {invitations.map((invite, index) => (
-                            <React.Fragment key={invite.id}>
-                                {index > 0 && <Divider />}
-                                <ListItem
-                                    alignItems="flex-start"
-                                    secondaryAction={
-                                        <Stack direction="row" spacing={1}>
-                                            <IconButton
-                                                edge="end"
-                                                color="error"
-                                                onClick={() => handleDecline(invite)}
-                                                title="拒绝"
-                                            >
-                                                <CloseIcon />
-                                            </IconButton>
-                                            <IconButton
-                                                edge="end"
-                                                color="success"
-                                                onClick={() => handleAccept(invite)}
-                                                title="接受"
-                                            >
-                                                <CheckIcon />
-                                            </IconButton>
-                                        </Stack>
-                                    }
-                                    sx={{ py: 2 }}
-                                >
-                                    <ListItemAvatar>
-                                        <Avatar sx={{ bgcolor: 'primary.light' }}>
-                                            <MailIcon />
-                                        </Avatar>
-                                    </ListItemAvatar>
-                                    <ListItemText
-                                        primary={
-                                            <Typography variant="subtitle1" fontWeight="bold">
-                                                邀请加入列表: {invite.listName}
-                                            </Typography>
-                                        }
-                                        secondary={
-                                            <React.Fragment>
-                                                <Typography component="span" variant="body2" color="text.primary">
-                                                    {invite.inviterEmail}
-                                                </Typography>
-                                                {" 邀请您成为此列表的成员。"}
-                                            </React.Fragment>
-                                        }
-                                    />
-                                </ListItem>
-                            </React.Fragment>
+                <Card>
+                    <CardContent className="p-0">
+                        {invitations.map((invite) => (
+                            <div key={invite.id} className="flex items-start gap-4 p-4 border-b last:border-0 hover:bg-muted/50 transition-colors">
+                                <Avatar className="mt-1">
+                                    <AvatarFallback className="bg-primary/10 text-primary">
+                                        <Mail className="h-4 w-4" />
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 space-y-1">
+                                    <p className="font-medium text-sm">
+                                        邀请加入列表: {invite.listName}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">
+                                        <span className="font-medium text-foreground">{invite.inviterEmail}</span> 邀请您成为此列表的成员。
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        size="icon"
+                                        variant="outline"
+                                        className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                                        onClick={() => handleDecline(invite)}
+                                        title="拒绝"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        size="icon"
+                                        className="h-9 w-9"
+                                        onClick={() => handleAccept(invite)}
+                                        title="接受"
+                                    >
+                                        <Check className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
                         ))}
-                    </List>
-                </Paper>
+                    </CardContent>
+                </Card>
             )}
-        </Container>
+        </div>
     );
 };
 

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Box, Typography, Button, Chip, Stack, Grid, useMediaQuery, useTheme } from '@mui/material';
-import { Add as AddIcon, Share } from '@mui/icons-material';
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Share2 } from "lucide-react";
 import InventoryTable from './InventoryTable';
 import ItemCard from './ItemCard';
 
@@ -17,74 +18,66 @@ const InventoryView = ({
     markAsReplaced,
     isUserGoogleLoggedIn
 }) => {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    // Basic media query hook replacement
+    const [isMobile, setIsMobile] = React.useState(false);
+
+    React.useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 640);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     return (
         <>
             {/* List Header */}
-            <Box sx={{
-                px: { xs: 2, sm: 3 },
-                py: 2,
-                bgcolor: 'background.default',
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' }, // Stack on mobile
-                justifyContent: 'space-between',
-                alignItems: { xs: 'flex-start', sm: 'center' }, // Align start on mobile
-                gap: { xs: 2, sm: 0 } // Add gap on mobile
-            }}>
-                <Stack direction="column" spacing={0.5} sx={{ width: '100%' }}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                        <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">
+            <div className="px-4 sm:px-6 py-4 bg-background border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+                <div className="flex flex-col gap-1 w-full">
+                    <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-muted-foreground text-sm">
                             {titleText}
-                        </Typography>
+                        </h3>
                         {currentList && (
-                            <Chip
-                                label="共享列表"
-                                size="small"
-                                color="primary"
-                                variant="outlined"
-                                sx={{ height: 20, fontSize: '0.7rem' }}
-                            />
+                            <Badge variant="outline" className="text-xs h-5 px-1.5 font-normal">
+                                共享列表
+                            </Badge>
                         )}
-                    </Stack>
+                    </div>
                     {currentList && currentList.type === 'shared' && (
-                        <Typography variant="caption" color="text.secondary">
+                        <p className="text-xs text-muted-foreground">
                             创建者: {currentList.ownerEmail || '未知'} | 成员: {currentList.memberEmails ? currentList.memberEmails.join(', ') : `${currentList.members ? currentList.members.length : 0} 人`}
-                        </Typography>
+                        </p>
                     )}
-                </Stack>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-start' }, flexWrap: 'wrap', gap: 1 }}>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
                     {currentList && currentList.type === 'shared' && (
                         <Button
-                            size="small"
-                            startIcon={<Share />}
+                            variant="outline"
+                            size="sm"
                             onClick={handleShareList}
-                            sx={{ textTransform: 'none', whiteSpace: 'nowrap' }}
+                            className="whitespace-nowrap"
                         >
+                            <Share2 className="mr-2 h-4 w-4" />
                             邀请成员
                         </Button>
                     )}
                     <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<AddIcon />}
+                        size="sm"
                         onClick={handleAddItemClick}
                         disabled={!user}
-                        sx={{ flexGrow: { xs: 1, sm: 0 }, whiteSpace: 'nowrap' }}
+                        className="flex-1 sm:flex-none whitespace-nowrap"
                     >
+                        <Plus className="mr-2 h-4 w-4" />
                         {activeTab === 'chores' ? '添加任务' : '添加物品'}
                     </Button>
-                </Stack>
-            </Box>
+                </div>
+            </div>
 
             {/* Content Area */}
-            <Box sx={{ p: 0 }}>
+            <div className="p-0">
                 {itemsList.length > 0 ? (
                     isMobile ? (
-                        <Stack spacing={2} sx={{ p: { xs: 2, sm: 3 } }}>
+                        <div className="p-4 space-y-4">
                             {itemsList.map(item => (
                                 <ItemCard
                                     key={item.id}
@@ -96,7 +89,7 @@ const InventoryView = ({
                                     isMobile={isMobile}
                                 />
                             ))}
-                        </Stack>
+                        </div>
                     ) : (
                         <InventoryTable
                             items={itemsList}
@@ -107,17 +100,17 @@ const InventoryView = ({
                         />
                     )
                 ) : (
-                    <Box sx={{ py: 8, textAlign: 'center' }}>
-                        <Typography color="text.secondary">
+                    <div className="py-16 text-center">
+                        <p className="text-muted-foreground">
                             {isUserGoogleLoggedIn
                                 ? (activeTab === 'restock'
                                     ? "没有需要补货或即将过期的物品"
                                     : "没有找到匹配的物品")
                                 : "请先登录"}
-                        </Typography>
-                    </Box>
+                        </p>
+                    </div>
                 )}
-            </Box>
+            </div>
         </>
     );
 };

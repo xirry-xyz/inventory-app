@@ -1,7 +1,15 @@
 import React, { memo } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-    TextField, Button, FormControl, InputLabel, Select, MenuItem, Grid, Box, Typography, FormControlLabel, Checkbox
-} from '@mui/material';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 const categories = [
     '食品生鲜',
@@ -15,10 +23,25 @@ const categories = [
 const ItemForm = memo(({ newItem, setNewItem, addItem, user, showStatus }) => {
 
     const handleInputChange = (e) => {
-        const { name, value, checked, type } = e.target;
+        const { name, value, type } = e.target;
         setNewItem(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: value
+        }));
+    };
+
+    // Shader select onValueChange handler wrapper
+    const handleSelectChange = (name, value) => {
+        setNewItem(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleCheckboxChange = (checked) => {
+        setNewItem(prev => ({
+            ...prev,
+            isPeriodic: checked
         }));
     };
 
@@ -31,143 +54,132 @@ const ItemForm = memo(({ newItem, setNewItem, addItem, user, showStatus }) => {
     const isLoggedIn = !!user && !!user.uid;
 
     return (
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                基本信息
-            </Typography>
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12}>
-                    <TextField
-                        fullWidth
-                        label="物品名称"
-                        name="name"
-                        value={newItem.name}
-                        onChange={handleInputChange}
-                        required
-                        size="small"
-                        placeholder="例如：洗手液"
-                    />
-                </Grid>
-                <Grid item xs={12}>
-                    <FormControl fullWidth required size="small">
-                        <InputLabel>分类</InputLabel>
-                        <Select
-                            name="category"
-                            value={newItem.category}
-                            label="分类"
+        <form onSubmit={handleSubmit} className="space-y-6 mt-2">
+            <div className="space-y-4">
+                <h4 className="text-sm font-medium text-muted-foreground">基本信息</h4>
+                <div className="grid gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">物品名称</Label>
+                        <Input
+                            id="name"
+                            name="name"
+                            value={newItem.name}
                             onChange={handleInputChange}
+                            required
+                            placeholder="例如：洗手液"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>分类</Label>
+                        <Select
+                            value={newItem.category}
+                            onValueChange={(val) => handleSelectChange('category', val)}
                         >
-                            {categories.map(cat => (
-                                <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-                            ))}
+                            <SelectTrigger>
+                                <SelectValue placeholder="选择分类" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {categories.map(cat => (
+                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                ))}
+                            </SelectContent>
                         </Select>
-                    </FormControl>
-                </Grid>
-            </Grid>
+                    </div>
+                </div>
+            </div>
 
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                库存设置
-            </Typography>
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={6}>
-                    <TextField
-                        fullWidth
-                        label="当前库存"
-                        name="currentStock"
-                        type="number"
-                        value={newItem.currentStock}
-                        onChange={handleInputChange}
-                        required
-                        size="small"
-                        inputProps={{ min: 0 }}
-                    />
-                </Grid>
-                <Grid item xs={6}>
-                    <TextField
-                        fullWidth
-                        label="安全库存"
-                        name="safetyStock"
-                        type="number"
-                        value={newItem.safetyStock}
-                        onChange={handleInputChange}
-                        required
-                        size="small"
-                        inputProps={{ min: 1 }}
-                    />
-                </Grid>
-                <Grid item xs={12}>
-                    <TextField
-                        fullWidth
-                        label="过期日期 (可选)"
-                        name="expirationDate"
-                        type="date"
-                        value={newItem.expirationDate || ''}
-                        onChange={handleInputChange}
-                        size="small"
-                        InputLabelProps={{ shrink: true }}
-                    />
-                </Grid>
-            </Grid>
+            <div className="space-y-4">
+                <h4 className="text-sm font-medium text-muted-foreground">库存设置</h4>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="currentStock">当前库存</Label>
+                        <Input
+                            id="currentStock"
+                            name="currentStock"
+                            type="number"
+                            value={newItem.currentStock}
+                            onChange={handleInputChange}
+                            required
+                            min={0}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="safetyStock">安全库存</Label>
+                        <Input
+                            id="safetyStock"
+                            name="safetyStock"
+                            type="number"
+                            value={newItem.safetyStock}
+                            onChange={handleInputChange}
+                            required
+                            min={1}
+                        />
+                    </div>
+                    <div className="col-span-2 space-y-2">
+                        <Label htmlFor="expirationDate">过期日期 (可选)</Label>
+                        <Input
+                            id="expirationDate"
+                            name="expirationDate"
+                            type="date"
+                            value={newItem.expirationDate || ''}
+                            onChange={handleInputChange}
+                        />
+                    </div>
+                </div>
+            </div>
 
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                周期性更换 (可选)
-            </Typography>
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12}>
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={newItem.isPeriodic || false}
-                                onChange={handleInputChange}
-                                name="isPeriodic"
-                            />
-                        }
-                        label="启用周期性更换提醒 (如电动牙刷头)"
+            <div className="space-y-4">
+                <h4 className="text-sm font-medium text-muted-foreground">周期性更换 (可选)</h4>
+
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                        id="isPeriodic"
+                        checked={newItem.isPeriodic || false}
+                        onCheckedChange={handleCheckboxChange}
                     />
-                </Grid>
+                    <Label htmlFor="isPeriodic" className="text-sm font-normal cursor-pointer">
+                        启用周期性更换提醒 (如电动牙刷头)
+                    </Label>
+                </div>
+
                 {newItem.isPeriodic && (
-                    <>
-                        <Grid item xs={6}>
-                            <TextField
-                                fullWidth
-                                label="更换周期 (天)"
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="replacementCycle">更换周期 (天)</Label>
+                            <Input
+                                id="replacementCycle"
                                 name="replacementCycle"
                                 type="number"
                                 value={newItem.replacementCycle || ''}
                                 onChange={handleInputChange}
                                 required={newItem.isPeriodic}
-                                size="small"
-                                inputProps={{ min: 1 }}
+                                min={1}
                             />
-                        </Grid>
-                        <Grid item xs={6}>
-                            <TextField
-                                fullWidth
-                                label="上次更换日期"
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="lastReplaced">上次更换日期</Label>
+                            <Input
+                                id="lastReplaced"
                                 name="lastReplaced"
                                 type="date"
                                 value={newItem.lastReplaced || new Date().toISOString().split('T')[0]}
                                 onChange={handleInputChange}
                                 required={newItem.isPeriodic}
-                                size="small"
-                                InputLabelProps={{ shrink: true }}
                             />
-                        </Grid>
-                    </>
+                        </div>
+                    </div>
                 )}
-            </Grid>
+            </div>
 
             <Button
                 type="submit"
-                fullWidth
-                variant="contained"
-                disableElevation
+                className="w-full"
                 disabled={!isLoggedIn}
-                sx={{ height: 40 }}
             >
                 {isLoggedIn ? '保存物品' : '请先登录'}
             </Button>
-        </Box>
+        </form>
     );
 });
 
