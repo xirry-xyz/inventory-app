@@ -20,8 +20,8 @@ export const categories = {
 const FilterBar = ({ searchTerm, setSearchTerm, activeCategory, setActiveCategory }) => {
     return (
         <div className="p-4 md:p-6 border-b">
-            <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="w-full md:w-1/3 relative">
+            <div className="flex flex-col gap-4">
+                <div className="w-full relative">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="搜索物品..."
@@ -30,7 +30,7 @@ const FilterBar = ({ searchTerm, setSearchTerm, activeCategory, setActiveCategor
                         className="pl-9"
                     />
                 </div>
-                <div className="w-full md:w-2/3 flex flex-wrap gap-2">
+                <div className="w-full flex-1 flex flex-wrap gap-2">
                     {Object.keys(categories).map(category => (
                         <Button
                             key={category}

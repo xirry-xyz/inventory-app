@@ -87,7 +87,7 @@ const App = () => {
     const [showChoreModal, setShowChoreModal] = useState(false);
     const [newItem, setNewItem] = useState({ name: '', safetyStock: 1, currentStock: 0, category: '日用百货', expirationDate: '' });
     const { toast } = useToast();
-    const [activeTab, setActiveTab] = useState('inventory');
+    const [activeTab, setActiveTab] = useState('chores');
 
     // Helpers
     const showStatus = useCallback((message, isError = false, duration = 3000) => {
@@ -249,9 +249,9 @@ const App = () => {
                     <div className="space-y-6">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                             <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="chores">家务提醒</TabsTrigger>
                                 <TabsTrigger value="inventory">物品清单</TabsTrigger>
                                 <TabsTrigger value="restock">补货提醒</TabsTrigger>
-                                <TabsTrigger value="chores">家务提醒</TabsTrigger>
                             </TabsList>
 
                             {/* Dashboard Stats (Only on Inventory) */}

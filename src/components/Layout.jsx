@@ -150,17 +150,17 @@ const Layout = ({
                             <div className="space-y-1">
                                 <p className="px-2 text-xs text-muted-foreground/70 font-medium py-1">私有列表</p>
                                 {/* Default List */}
-                                <div className="group flex items-center justify-between rounded-md hover:bg-muted/50 transition-colors">
+                                <div className={`group flex items-center justify-between rounded-md hover:bg-muted/50 transition-colors ${!currentList && activeTab !== 'settings' && activeTab !== 'notifications' ? 'bg-secondary' : ''}`}>
                                     <Button
                                         variant="ghost"
-                                        className={`justify-start w-full font-normal ${!currentList && activeTab === 'inventory' ? 'bg-secondary font-medium' : ''}`}
+                                        className={`justify-start w-full font-normal hover:bg-transparent ${!currentList && activeTab !== 'settings' && activeTab !== 'notifications' ? 'font-medium' : ''}`}
                                         onClick={() => {
                                             setCurrentList(null);
-                                            setActiveTab('inventory');
+                                            setActiveTab('chores');
                                             setMobileOpen(false);
                                         }}
                                     >
-                                        <User className={`mr-2 h-4 w-4 ${!currentList && activeTab === 'inventory' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                        <User className={`mr-2 h-4 w-4 ${!currentList && activeTab !== 'settings' && activeTab !== 'notifications' ? 'text-primary' : 'text-muted-foreground'}`} />
                                         {mainListName || "主清单"}
                                     </Button>
                                     <DropdownMenu>
@@ -189,17 +189,17 @@ const Layout = ({
 
                                 {/* Other Private Lists */}
                                 {privateLists.map(list => (
-                                    <div key={list.id} className="group flex items-center justify-between rounded-md hover:bg-muted/50 transition-colors">
+                                    <div key={list.id} className={`group flex items-center justify-between rounded-md hover:bg-muted/50 transition-colors ${currentList?.id === list.id && activeTab !== 'settings' && activeTab !== 'notifications' ? 'bg-secondary' : ''}`}>
                                         <Button
                                             variant="ghost"
-                                            className={`justify-start w-full font-normal ${currentList?.id === list.id && activeTab === 'inventory' ? 'bg-secondary font-medium' : ''}`}
+                                            className={`justify-start w-full font-normal hover:bg-transparent ${currentList?.id === list.id && activeTab !== 'settings' && activeTab !== 'notifications' ? 'font-medium' : ''}`}
                                             onClick={() => {
                                                 setCurrentList(list);
-                                                setActiveTab('inventory');
+                                                setActiveTab('chores');
                                                 setMobileOpen(false);
                                             }}
                                         >
-                                            <ListIcon className={`mr-2 h-4 w-4 ${currentList?.id === list.id && activeTab === 'inventory' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                            <ListIcon className={`mr-2 h-4 w-4 ${currentList?.id === list.id && activeTab !== 'settings' && activeTab !== 'notifications' ? 'text-primary' : 'text-muted-foreground'}`} />
                                             {list.name}
                                         </Button>
                                         <DropdownMenu>
@@ -232,17 +232,17 @@ const Layout = ({
                             <div className="space-y-1 mt-4">
                                 <p className="px-2 text-xs text-muted-foreground/70 font-medium py-1">共享列表</p>
                                 {sharedListsFiltered.map(list => (
-                                    <div key={list.id} className="group flex items-center justify-between rounded-md hover:bg-muted/50 transition-colors">
+                                    <div key={list.id} className={`group flex items-center justify-between rounded-md hover:bg-muted/50 transition-colors ${currentList?.id === list.id && activeTab !== 'settings' && activeTab !== 'notifications' ? 'bg-secondary' : ''}`}>
                                         <Button
                                             variant="ghost"
-                                            className={`justify-start w-full font-normal ${currentList?.id === list.id && activeTab === 'inventory' ? 'bg-secondary font-medium' : ''}`}
+                                            className={`justify-start w-full font-normal hover:bg-transparent ${currentList?.id === list.id && activeTab !== 'settings' && activeTab !== 'notifications' ? 'font-medium' : ''}`}
                                             onClick={() => {
                                                 setCurrentList(list);
-                                                setActiveTab('inventory');
+                                                setActiveTab('chores');
                                                 setMobileOpen(false);
                                             }}
                                         >
-                                            <Users className={`mr-2 h-4 w-4 ${currentList?.id === list.id && activeTab === 'inventory' ? 'text-secondary-foreground' : 'text-muted-foreground'}`} />
+                                            <Users className={`mr-2 h-4 w-4 ${currentList?.id === list.id && activeTab !== 'settings' && activeTab !== 'notifications' ? 'text-secondary-foreground' : 'text-muted-foreground'}`} />
                                             {list.name}
                                         </Button>
                                         <DropdownMenu>
@@ -272,9 +272,8 @@ const Layout = ({
                             </div>
 
                             <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full justify-start text-muted-foreground mt-4"
+                                variant="ghost"
+                                className="w-full justify-start text-muted-foreground font-normal mt-2 hover:bg-muted/50"
                                 onClick={handleOpenCreateModal}
                             >
                                 <Plus className="mr-2 h-4 w-4" />
