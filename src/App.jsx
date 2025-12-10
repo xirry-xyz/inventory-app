@@ -15,6 +15,7 @@ import { useInventory } from './hooks/useInventory';
 import { useSharedLists } from './hooks/useSharedLists';
 import { useInvitations } from './hooks/useInvitations';
 import { useChores } from './hooks/useChores';
+import { useChoreNotifications } from './hooks/useChoreNotifications';
 
 import Layout from './components/Layout';
 import CustomModal from './components/CustomModal';
@@ -80,6 +81,9 @@ const App = () => {
     const {
         chores, addChore, updateChore, deleteChore, completeChore, removeCompletion
     } = useChores(user, currentList);
+
+    // Call notification hook
+    useChoreNotifications(chores);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('全部');
