@@ -16,9 +16,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Inventory App',
-        short_name: 'Inventory',
-        description: 'Family Inventory Management App',
+        name: 'HomeSync',
+        short_name: 'HomeSync',
+        description: 'Family Inventory & Chore Management',
         theme_color: '#ffffff',
         icons: [
           {

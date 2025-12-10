@@ -134,7 +134,7 @@ const Layout = ({
         <div className="flex flex-col h-full bg-muted/20 border-r">
             <div className="h-16 flex items-center px-6 border-b">
                 <h1 className="text-lg font-bold">
-                    Inventory<span className="text-primary">App</span>
+                    Home<span className="text-primary">Sync</span>
                 </h1>
             </div>
 
@@ -362,7 +362,7 @@ const Layout = ({
                             <SidebarContent />
                         </SheetContent>
                     </Sheet>
-                    <h1 className="font-bold text-lg">Inventory App</h1>
+                    <h1 className="font-bold text-lg">HomeSync</h1>
                 </div>
                 {user && (
                     <Button variant="ghost" size="icon" onClick={() => setActiveTab('notifications')}>

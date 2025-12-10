@@ -16,6 +16,14 @@ export const useChoreNotifications = (chores) => {
             if (Notification.permission !== 'granted') return;
 
             const now = new Date();
+            const hour = now.getHours();
+
+            // Only notify between 10:00 AM and 8:00 PM (20:00)
+            if (hour < 10 || hour >= 20) {
+                console.log('Outside notification hours (10am - 8pm)');
+                return;
+            }
+
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
             let hasNotified = false;
@@ -44,8 +52,8 @@ export const useChoreNotifications = (chores) => {
         // Check initially after a short delay
         const timeout = setTimeout(checkChores, 5000);
 
-        // Check every hour (3600000 ms)
-        const interval = setInterval(checkChores, 3600000);
+        // Check every 2.5 hours (2.5 * 60 * 60 * 1000 = 9000000 ms)
+        const interval = setInterval(checkChores, 9000000);
 
         return () => {
             clearTimeout(timeout);
