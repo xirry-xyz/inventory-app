@@ -142,38 +142,6 @@ export const useSharedLists = (user) => {
         }
     };
 
-    // 1. Clear all items in the main inventory
-    // Note: This matches "deleting" the list.
-    const inventoryRef = collection(db, `artifacts/${appId}/users/${user.uid}/inventory`);
-    const snapshot = await getDocs(inventoryRef);
-    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
-    await Promise.all(deletePromises);
-
-    // 2. Mark as deleted in preferences
-    const prefRef = doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'preferences');
-    await setDoc(prefRef, { mainListDeleted: true }, { merge: true });
-
-    showStatus('主清单已删除');
-    return true;
-} catch (e) {
-    console.error("Delete main list error:", e);
-    showStatus(`删除失败: ${e.message}`, true);
-    return false;
-}
-        }
-
-try {
-    // Find the list in our local state to get its path
-    const list = sharedLists.find(l => l.id === listId);
-    if (!list) throw new Error("List not found locally");
-
-    // Only owner can delete (enforced by rules, but good to check here or handle error)
-    const listRef = doc(db, list.path);
-    await deleteDoc(listRef);
-    showStatus('列表已删除');
-    return true;
-} catch (error) {
-    console.error("Error deleting list:", error);
     const deleteList = async (listId, showStatus) => {
         if (!user || !user.uid) return false;
 
