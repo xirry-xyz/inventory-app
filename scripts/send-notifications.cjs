@@ -40,26 +40,30 @@ async function sendNotifications() {
     const usersRef = db.collection(`artifacts/${TARGET_APP_ID}/users`);
     const usersSnap = await usersRef.get();
 
-    if (usersSnap.empty) {
-        console.log('No users found.');
-        return;
-    }
-
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    console.log(`Found ${usersSnap.size} user(s). Processing...`);
 
     for (const userDoc of usersSnap.docs) {
         const userData = userDoc.data();
         const fcmTokens = userData.fcmTokens || [];
 
-        if (fcmTokens.length === 0) continue;
+        console.log(`User ${userDoc.id}: Found ${fcmTokens.length} tokens.`);
+
+        if (fcmTokens.length === 0) {
+            console.log(`Skipping User ${userDoc.id}: No tokens.`);
+            continue;
+        }
 
         // Check chores for this user
         // Chores path: artifacts/{appId}/users/{uid}/chores
         const choresRef = userDoc.ref.collection('chores');
         const choresSnap = await choresRef.get();
 
-        if (choresSnap.empty) continue;
+        console.log(`User ${userDoc.id}: Found ${choresSnap.size} chores.`);
+
+        if (choresSnap.empty) {
+            console.log(`Skipping User ${userDoc.id}: No chores.`);
+            continue;
+        }
 
         let choresDue = [];
 
