@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getMessaging, getToken } from "firebase/messaging";
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, setDoc, arrayUnion } from "firebase/firestore";
 import { db, appId } from '../firebase';
 
 export const usePushToken = (user) => {
@@ -28,10 +28,10 @@ export const usePushToken = (user) => {
                         setToken(currentToken);
                         // Save token to Firestore
                         const userRef = doc(db, `artifacts/${appId}/users/${user.uid}`);
-                        // Use arrayUnion to add without duplicates
-                        await updateDoc(userRef, {
+                        // Use setDoc with merge to ensure document exists (handling phantom docs)
+                        await setDoc(userRef, {
                             fcmTokens: arrayUnion(currentToken)
-                        });
+                        }, { merge: true });
                     } else {
                         console.log('No registration token available. Request permission to generate one.');
                     }
