@@ -16,6 +16,7 @@ import { useSharedLists } from './hooks/useSharedLists';
 import { useInvitations } from './hooks/useInvitations';
 import { useChores } from './hooks/useChores';
 import { useChoreNotifications } from './hooks/useChoreNotifications';
+import { usePushToken } from './hooks/usePushToken';
 
 import Layout from './components/Layout';
 import CustomModal from './components/CustomModal';
@@ -82,8 +83,10 @@ const App = () => {
         chores, addChore, updateChore, deleteChore, completeChore, removeCompletion
     } = useChores(user, currentList);
 
-    // Call notification hook
+    // Call notification hook (Client-side)
     useChoreNotifications(chores);
+    // Call token registration hook (Server-side)
+    usePushToken(user);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('全部');

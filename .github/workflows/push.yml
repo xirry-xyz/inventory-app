@@ -1,0 +1,34 @@
+name: Send Chore Notifications
+
+on:
+  schedule:
+    # Run every 2 hours.
+    # Note: GitHub Actions schedule uses UTC.
+    # Beijing Time (UTC+8) 10:00 - 20:00 = UTC 02:00 - 12:00
+    # Cron: "0 2-12/2 * * *" -> At minute 0 past every 2nd hour from 2 through 12.
+    - cron: '0 2-12/2 * * *'
+  workflow_dispatch: # Allow manual trigger for testing
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+
+    - name: Install Dependencies
+      run: npm install firebase-admin date-fns
+
+    - name: Run Notification Script
+      env:
+        FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        # Default App ID if needed, or matched from env
+        # VITE_FIREBASE_APP_ID might be needed if script logic relies on it. 
+        # Our script logic uses hardcoded 'default-app-id' or process.env.VITE_FIREBASE_APP_ID.
+        # Let's set it if user provided it in secrets or just rely on default for now as hardcoded in script.
+      run: node scripts/send-notifications.js
