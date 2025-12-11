@@ -96,7 +96,7 @@ const SettingsPage = ({
 
 // Internal Debug Component
 import { useEffect, useState } from 'react';
-import { doc, getDoc, setDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, arrayUnion, collection, getDocs } from 'firebase/firestore';
 import { db, appId } from '../firebase';
 import { useToast } from "@/hooks/use-toast";
 import { getMessaging, getToken } from "firebase/messaging";
@@ -114,6 +114,10 @@ const DebugInfo = ({ user }) => {
             const snap = await getDoc(userRef);
             const data = snap.exists() ? snap.data() : null;
 
+            // Check default chores
+            const choresRef = collection(db, `artifacts/${appId}/users/${user.uid}/chores`);
+            const choresSnap = await getDocs(choresRef);
+
             setInfo({
                 loading: false,
                 appId: appId,
@@ -121,6 +125,7 @@ const DebugInfo = ({ user }) => {
                 exists: snap.exists(),
                 tokenCount: data?.fcmTokens?.length || 0,
                 tokens: data?.fcmTokens || [],
+                choreCount: choresSnap.size, // Add this
                 permission: typeof Notification !== 'undefined' ? Notification.permission : 'Unsupported',
                 vapidKey: !!import.meta.env.VITE_FIREBASE_VAPID_KEY,
                 swStatus: 'navigator' in window && 'serviceWorker' in navigator
@@ -196,6 +201,7 @@ const DebugInfo = ({ user }) => {
             <p><span className="text-muted-foreground">Path:</span> {info.path}</p>
             <p><span className="text-muted-foreground">Doc Exists:</span> {info.exists ? '✅ YES' : '❌ NO'}</p>
             <p><span className="text-muted-foreground">Token Count:</span> {info.tokenCount}</p>
+            <p><span className="text-muted-foreground">Default Chores:</span> {info.choreCount}</p>
             {info.tokenCount > 0 && (
                 <div className="mt-1 pl-2 border-l-2 border-green-500/20">
                     {info.tokens.map((t, i) => (
