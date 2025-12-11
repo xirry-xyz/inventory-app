@@ -285,17 +285,43 @@ const App = () => {
                                             />
                                         )}
 
-                                        <TabsContent value="chores" className="mt-0 p-4 border-none data-[state=inactive]:hidden">
-                                            <ChoreCalendar
-                                                chores={chores}
-                                                onRemoveCompletion={(id, date) => removeCompletion(id, date, showStatus)}
-                                            />
-                                            <ChoreList
-                                                chores={chores}
-                                                onComplete={(chore, date) => completeChore(chore, showStatus, date)}
-                                                onDelete={(id) => deleteChore(id, showStatus)}
-                                                user={user}
-                                            />
+                                        <TabsContent value="chores" className="mt-0 p-0 border-none data-[state=inactive]:hidden">
+                                            {/* Chores Header to match InventoryView */}
+                                            <div className="px-4 sm:px-6 py-4 bg-background border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+                                                <div className="flex flex-col gap-1 w-full">
+                                                    <h3 className="font-semibold text-muted-foreground text-sm">
+                                                        家务清单
+                                                    </h3>
+                                                </div>
+                                                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                                    <Button // Re-import Button/Plus from ui components if needed, but App.jsx uses standard imports or components. 
+                                                        // Wait, App.jsx imports components from '@/components/ui/...'.
+                                                        // We need to make sure Button and Plus are imported.
+                                                        // App.jsx does NOT import Button currently?
+                                                        // Let's check imports.
+                                                        size="sm"
+                                                        onClick={handleAddItemClick} // logic already handles 'chores' tab
+                                                        disabled={!user}
+                                                        className="flex-1 sm:flex-none whitespace-nowrap"
+                                                    >
+                                                        {/* Plus icon needs to be imported */}
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        添加任务
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="p-4">
+                                                <ChoreCalendar
+                                                    chores={chores}
+                                                    onRemoveCompletion={(id, date) => removeCompletion(id, date, showStatus)}
+                                                />
+                                                <ChoreList
+                                                    chores={chores}
+                                                    onComplete={(chore, date) => completeChore(chore, showStatus, date)}
+                                                    onDelete={(id) => deleteChore(id, showStatus)}
+                                                    user={user}
+                                                />
+                                            </div>
                                         </TabsContent>
 
                                         <TabsContent value="inventory" className="mt-0 data-[state=inactive]:hidden">
