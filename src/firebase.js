@@ -36,10 +36,6 @@ if (configString && configString.trim() !== '' && configString.trim() !== '{}') 
 
     if (envConfig.projectId && envConfig.projectId !== "YOUR_PROJECT_ID") {
         firebaseConfig = envConfig;
-        // Update the exported appId to match the real configuration
-        if (envConfig.appId) {
-            appId = envConfig.appId;
-        }
     } else {
         initializationError = initializationError ||
             'Firebase配置缺失或未更新。请检查 .env 文件配置。';
