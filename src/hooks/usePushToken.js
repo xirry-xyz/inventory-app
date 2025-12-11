@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getMessaging, getToken } from "firebase/messaging";
 import { doc, setDoc, arrayUnion } from "firebase/firestore";
 import { db, appId } from '../firebase';
+import { toast } from "sonner"; // Import sonner for visibility
 
 export const usePushToken = (user) => {
     const [token, setToken] = useState(null);
@@ -16,10 +17,10 @@ export const usePushToken = (user) => {
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
                     // Try to get token
-                    // NOTE: VAPID key is required. We will expect it in env var VITE_FIREBASE_VAPID_KEY
                     const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
                     if (!vapidKey) {
-                        console.warn("VITE_FIREBASE_VAPID_KEY is missing. Push notifications will not work.");
+                        console.warn("VITE_FIREBASE_VAPID_KEY is missing.");
+                        toast.error("VITE_FIREBASE_VAPID_KEY 未配置，无法接收通知！");
                         return;
                     }
 
@@ -28,16 +29,29 @@ export const usePushToken = (user) => {
                         setToken(currentToken);
                         // Save token to Firestore
                         const userRef = doc(db, `artifacts/${appId}/users/${user.uid}`);
-                        // Use setDoc with merge to ensure document exists (handling phantom docs)
-                        await setDoc(userRef, {
-                            fcmTokens: arrayUnion(currentToken)
-                        }, { merge: true });
+
+                        try {
+                            await setDoc(userRef, {
+                                fcmTokens: arrayUnion(currentToken)
+                            }, { merge: true });
+                            console.log("Token saved/updated for user:", user.uid);
+                            // Only show success once per session or if it's new could be annoying, 
+                            // but for debugging this is crucial.
+                            // toast.success("通知服务连接成功！"); 
+                        } catch (e) {
+                            console.error("Error saving token:", e);
+                            toast.error(`Token 保存失败: ${e.message}`);
+                        }
                     } else {
-                        console.log('No registration token available. Request permission to generate one.');
+                        console.log('No registration token available.');
                     }
+                } else {
+                    console.log('Notification permission denied.');
+                    toast.warning("请开启通知权限以接收家务提醒");
                 }
             } catch (err) {
-                console.log('An error occurred while retrieving token. ', err);
+                console.error('An error occurred while retrieving token. ', err);
+                toast.error(`通知服务出错: ${err.message}`);
             }
         };
 
@@ -45,4 +59,15 @@ export const usePushToken = (user) => {
     }, [user]);
 
     return token;
+};
+                }
+            } catch (err) {
+    console.log('An error occurred while retrieving token. ', err);
+}
+        };
+
+requestPermissionAndScan();
+    }, [user]);
+
+return token;
 };
