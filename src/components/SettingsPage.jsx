@@ -120,7 +120,12 @@ const DebugInfo = ({ user }) => {
                 path: `artifacts/${appId}/users/${user.uid}`,
                 exists: snap.exists(),
                 tokenCount: data?.fcmTokens?.length || 0,
-                tokens: data?.fcmTokens || []
+                tokens: data?.fcmTokens || [],
+                permission: typeof Notification !== 'undefined' ? Notification.permission : 'Unsupported',
+                vapidKey: !!import.meta.env.VITE_FIREBASE_VAPID_KEY,
+                swStatus: 'navigator' in window && 'serviceWorker' in navigator
+                    ? (await navigator.serviceWorker.getRegistration() ? 'Active' : 'Missing')
+                    : 'Unsupported'
             });
         } catch (e) {
             setInfo({ loading: false, error: e.message });
@@ -198,15 +203,22 @@ const DebugInfo = ({ user }) => {
                     ))}
                 </div>
             )}
+
+            <div className="my-2 border-t pt-2">
+                <p><span className="text-muted-foreground">Client Permission:</span> {info.permission}</p>
+                <p><span className="text-muted-foreground">VAPID Key:</span> {info.vapidKey ? '✅ Configured' : '❌ Missing'}</p>
+                <p><span className="text-muted-foreground">Service Worker:</span> {info.swStatus}</p>
+            </div>
+
             <div className="pt-2">
                 <Button
                     variant="outline"
                     size="sm"
                     onClick={handleRepair}
                     disabled={repairing}
-                    className="h-7 text-xs"
+                    className="h-7 text-xs w-full"
                 >
-                    {repairing ? "修复中..." : "🛠️ 强制同步数据"}
+                    {repairing ? "修复中..." : "🛠️ 强制同步数据 & 获取Token"}
                 </Button>
             </div>
         </>
