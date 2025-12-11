@@ -7,7 +7,8 @@ import {
     TabsList,
     TabsTrigger,
 } from "@/components/ui/tabs"
-import { Loader2 } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Loader2, Plus } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 
 import { useAuth } from './hooks/useAuth';
