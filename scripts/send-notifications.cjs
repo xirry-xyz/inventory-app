@@ -42,6 +42,9 @@ async function sendNotifications() {
 
     console.log(`Found ${usersSnap.size} user(s). Processing...`);
 
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
     for (const userDoc of usersSnap.docs) {
         const userData = userDoc.data();
         const fcmTokens = userData.fcmTokens || [];
