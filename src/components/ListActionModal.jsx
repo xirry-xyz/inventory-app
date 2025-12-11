@@ -19,19 +19,17 @@ import {
 
 const ListActionModal = ({ open, onClose, mode, initialName, initialType, onSubmit }) => {
     const [name, setName] = useState('');
-    const [type, setType] = useState('private');
 
     useEffect(() => {
         if (open) {
             setName(initialName || '');
-            setType(initialType || 'private');
         }
-    }, [open, initialName, initialType]);
+    }, [open, initialName]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (name.trim()) {
-            onSubmit(name.trim(), type);
+            onSubmit(name.trim(), 'shared');
             onClose();
         }
     };
@@ -54,25 +52,7 @@ const ListActionModal = ({ open, onClose, mode, initialName, initialType, onSubm
                         />
                     </div>
 
-                    {mode === 'create' && (
-                        <div className="space-y-2">
-                            <Label htmlFor="type">列表类型</Label>
-                            <Select value={type} onValueChange={setType}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="选择列表类型" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="private">个人私有列表</SelectItem>
-                                    <SelectItem value="shared">共享列表</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            {type === 'shared' && (
-                                <p className="text-xs text-muted-foreground">
-                                    创建后可以通过邀请链接邀请他人加入。
-                                </p>
-                            )}
-                        </div>
-                    )}
+
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={onClose}>
