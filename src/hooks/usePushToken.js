@@ -14,6 +14,13 @@ export const usePushToken = (user) => {
         const messaging = getMessaging();
 
         const requestPermissionAndScan = async () => {
+            // Safety check for browsers without Notification API (e.g. strict iOS settings or non-PWA context on old iOS)
+            if (typeof Notification === 'undefined' || !('Notification' in window)) {
+                console.log("This browser does not support notifications.");
+                // Optional: Toast warning, or just silent fail to avoid annoying user on unsupported devices
+                return;
+            }
+
             try {
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
