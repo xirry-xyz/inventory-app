@@ -40,7 +40,7 @@ const App = () => {
     } = useAuth();
 
     // Shared Lists & Invitations Hooks
-    const { sharedLists, loadingLists, loadingPreferences, createList, renameList, deleteList, mainListName, defaultListId, setDefaultList } = useSharedLists(user);
+    const { sharedLists, loadingLists, loadingPreferences, createList, renameList, deleteList, mainListName, mainListDeleted, defaultListId, setDefaultList } = useSharedLists(user);
     const { invitations, sendInvite, acceptInvite, declineInvite } = useInvitations(user);
 
     // Local State
