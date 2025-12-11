@@ -231,6 +231,7 @@ const App = () => {
                 declineInvite={declineInvite}
                 showStatus={showStatus}
                 mainListName={mainListName}
+                mainListDeleted={mainListDeleted}
                 defaultListId={defaultListId}
                 setDefaultList={setDefaultList}
             >

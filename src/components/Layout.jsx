@@ -62,6 +62,7 @@ const Layout = ({
     declineInvite,
     showStatus,
     mainListName, // New prop
+    mainListDeleted, // New prop
     defaultListId,
     setDefaultList
 }) => {
@@ -75,6 +76,9 @@ const Layout = ({
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [deleteMessage, setDeleteMessage] = useState('');
     const [listToDelete, setListToDelete] = useState(null);
+
+    // Only set current list to default if default is not null
+    // If deleted, we should handle it in parent or effect, but here we just hide it.
 
     const handleOpenCreateModal = () => {
         setListModalMode('create');
@@ -145,42 +149,44 @@ const Layout = ({
                             </h3>
 
                             {/* Main List (Always pins to top) */}
-                            <div className={`group flex items-center justify-between rounded-md hover:bg-muted/50 transition-colors ${!currentList && activeTab !== 'settings' && activeTab !== 'notifications' ? 'bg-secondary' : ''}`}>
-                                <Button
-                                    variant="ghost"
-                                    className={`justify-start w-full font-normal hover:bg-transparent ${!currentList && activeTab !== 'settings' && activeTab !== 'notifications' ? 'font-medium' : ''}`}
-                                    onClick={() => {
-                                        setCurrentList(null);
-                                        setActiveTab('chores');
-                                        setMobileOpen(false);
-                                    }}
-                                >
-                                    <ListIcon className={`mr-2 h-4 w-4 ${!currentList && activeTab !== 'settings' && activeTab !== 'notifications' ? 'text-primary' : 'text-muted-foreground'}`} />
-                                    {mainListName || "主清单"}
-                                </Button>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => handleSetDefault({ id: 'default', name: mainListName || '主清单' })} disabled={defaultListId === 'default'}>
-                                            <Pin className="mr-2 h-4 w-4" />
-                                            {defaultListId === 'default' ? "已设为默认" : "设为默认"}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => handleOpenRenameModal({ id: 'default', name: mainListName || '主清单' })}>
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            重命名
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleDeleteListClick({ id: 'default', name: mainListName || '主清单' })} className="text-destructive focus:text-destructive">
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            删除
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
+                            {!mainListDeleted && (
+                                <div className={`group flex items-center justify-between rounded-md hover:bg-muted/50 transition-colors ${!currentList && activeTab !== 'settings' && activeTab !== 'notifications' ? 'bg-secondary' : ''}`}>
+                                    <Button
+                                        variant="ghost"
+                                        className={`justify-start w-full font-normal hover:bg-transparent ${!currentList && activeTab !== 'settings' && activeTab !== 'notifications' ? 'font-medium' : ''}`}
+                                        onClick={() => {
+                                            setCurrentList(null);
+                                            setActiveTab('chores');
+                                            setMobileOpen(false);
+                                        }}
+                                    >
+                                        <ListIcon className={`mr-2 h-4 w-4 ${!currentList && activeTab !== 'settings' && activeTab !== 'notifications' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                        {mainListName || "主清单"}
+                                    </Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleSetDefault({ id: 'default', name: mainListName || '主清单' })} disabled={defaultListId === 'default'}>
+                                                <Pin className="mr-2 h-4 w-4" />
+                                                {defaultListId === 'default' ? "已设为默认" : "设为默认"}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={() => handleOpenRenameModal({ id: 'default', name: mainListName || '主清单' })}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                重命名
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleDeleteListClick({ id: 'default', name: mainListName || '主清单' })} className="text-destructive focus:text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                删除
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            )}
 
                             {/* All Other Lists */}
                             {sharedLists?.map(list => (

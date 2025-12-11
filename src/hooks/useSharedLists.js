@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-    collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, setDoc, collectionGroup
+    collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, setDoc, collectionGroup, getDocs
 } from 'firebase/firestore';
 import { db, appId } from '../firebase';
 
@@ -9,6 +9,7 @@ export const useSharedLists = (user) => {
     const [loadingLists, setLoadingLists] = useState(true);
     const [loadingPreferences, setLoadingPreferences] = useState(true);
     const [mainListName, setMainListName] = useState('主清单'); // State for Main List Name
+    const [mainListDeleted, setMainListDeleted] = useState(false); // State for Main List Deleted Status
     const [defaultListId, setDefaultListId] = useState(null); // State for Default List ID
 
     // Helper to get the user's lists collection path
@@ -17,6 +18,7 @@ export const useSharedLists = (user) => {
     useEffect(() => {
         if (!user || !user.uid || !db) {
             setSharedLists([]);
+            setMainListDeleted(false);
             setLoadingLists(false);
             return;
         }
@@ -56,6 +58,8 @@ export const useSharedLists = (user) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 if (data.mainListName) setMainListName(data.mainListName);
+                if (data.mainListDeleted) setMainListDeleted(data.mainListDeleted); // Fetch deleted status
+                else setMainListDeleted(false); // Reset if field missing
                 if (data.defaultListId) setDefaultListId(data.defaultListId);
             }
             setLoadingPreferences(false);
@@ -138,55 +142,57 @@ export const useSharedLists = (user) => {
         }
     };
 
+    // 1. Clear all items in the main inventory
+    // Note: This matches "deleting" the list.
+    const inventoryRef = collection(db, `artifacts/${appId}/users/${user.uid}/inventory`);
+    const snapshot = await getDocs(inventoryRef);
+    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+
+    // 2. Mark as deleted in preferences
+    const prefRef = doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'preferences');
+    await setDoc(prefRef, { mainListDeleted: true }, { merge: true });
+
+    showStatus('主清单已删除');
+    return true;
+} catch (e) {
+    console.error("Delete main list error:", e);
+    showStatus(`删除失败: ${e.message}`, true);
+    return false;
+}
+        }
+
+try {
+    // Find the list in our local state to get its path
+    const list = sharedLists.find(l => l.id === listId);
+    if (!list) throw new Error("List not found locally");
+
+    // Only owner can delete (enforced by rules, but good to check here or handle error)
+    const listRef = doc(db, list.path);
+    await deleteDoc(listRef);
+    showStatus('列表已删除');
+    return true;
+} catch (error) {
+    console.error("Error deleting list:", error);
     const deleteList = async (listId, showStatus) => {
-        if (!user || !user.uid) return;
+        if (!user || !user.uid) return false;
 
-        if (listId === 'default') {
-            // Check if other lists exist (regardless of type)
-            const otherListsCount = sharedLists.length;
-            if (otherListsCount === 0) {
-                showStatus('无法删除：这是您唯一的列表。', true);
-                return false;
-            }
+        try {
+            if (listId === 'default') {
+                // 1. Clear all items in the main inventory
+                const inventoryRef = collection(db, `artifacts/${appId}/users/${user.uid}/inventory`);
+                const snapshot = await getDocs(inventoryRef);
+                const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+                await Promise.all(deletePromises);
 
-            // "Delete" Main List -> Clear inventory collection
-            // Note: Real deletion of subcollection requires cloud functions or recursive delete.
-            // For now, we will just warn the user that this action clears the list.
-            // Actually, the user requirement implies we can "delete" it. 
-            // Since we can't easily delete a subcollection from client without listing all docs,
-            // and we don't want to leave orphaned data.
-            // A simpler approach for "Main List" deletion might be to just HIDE it or CLEAR it.
-            // But since we can't truly "delete" the default bucket concept easily without complex logic,
-            // maybe we just block it for now or implement a "Clear" instead?
-            // User said: "When multiple private lists exist, allow delete."
-            // If we delete it, we should probably just clear the items in `users/{uid}/inventory`.
-
-            // Confirmation is now handled in UI layer
-            // if (!window.confirm('确定要清空并删除主清单吗？注意：这会清空主清单中的所有物品。')) return false;
-
-            try {
-                // We need to delete all documents in the inventory collection
-                // This is expensive on client side if many items.
-                // Let's just rename it to "Deleted" for now or handle it properly?
-                // Better: Just allow deleting the items.
-
-                // For this iteration, let's implement a "Soft Delete" or just clear items.
-                // To strictly follow "Delete", we might need to flag it as deleted in preferences
-                // and filter it out in UI.
-
+                // 2. Mark as deleted in preferences
                 const prefRef = doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'preferences');
-                const { setDoc } = await import('firebase/firestore');
                 await setDoc(prefRef, { mainListDeleted: true }, { merge: true });
 
                 showStatus('主清单已删除');
                 return true;
-            } catch (e) {
-                showStatus(`删除失败: ${e.message}`, true);
-                return false;
             }
-        }
 
-        try {
             // Find the list in our local state to get its path
             const list = sharedLists.find(l => l.id === listId);
             if (!list) throw new Error("List not found locally");
@@ -205,14 +211,13 @@ export const useSharedLists = (user) => {
 
     return {
         sharedLists,
-        sharedLists,
         loadingLists,
         loadingPreferences,
         createList,
         renameList,
         deleteList,
-        deleteList,
         mainListName,
+        mainListDeleted, // Exposed state
         defaultListId,
         setDefaultList
     };
