@@ -27,5 +27,4 @@ jobs:
     - name: Run Notification Script
       env:
         FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
       run: node scripts/send-notifications.cjs
