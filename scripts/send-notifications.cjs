@@ -95,10 +95,16 @@ async function sendNotifications() {
 
         allChores.forEach(chore => {
             if (chore.nextDue) {
-                const dueDate = new Date(chore.nextDue);
-                const dueDay = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+                // nextDue is stored as the midnight timestamp of the due date in the USER'S timezone.
+                // e.g. Due Dec 12 (China +8) -> Stored as Dec 11 16:00 UTC.
+                // If we are currently at Dec 11 09:00 UTC:
+                // Dec 11 16:00 <= Dec 11 09:00 is FALSE. (Not due yet)
+                // If we are at Dec 12 01:00 UTC (9am China):
+                // Dec 11 16:00 <= Dec 12 01:00 is TRUE. (Due)
 
-                if (dueDay <= today) {
+                const dueDate = new Date(chore.nextDue);
+
+                if (dueDate <= now) {
                     choresDue.push(chore.name);
                 }
             }
