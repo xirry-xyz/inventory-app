@@ -30,88 +30,65 @@ const TARGET_APP_ID = process.env.VITE_FIREBASE_APP_ID || 'default-app-id'; // W
 
 async function sendNotifications() {
     console.log(`Starting notification check for App ID: ${TARGET_APP_ID}`);
-    // We need to iterate over users
     // Path: artifacts/{appId}/users/{uid}
-
-    // Hardcoded logic for "default-app-id" if that is what we used in frontend.
-    // In src/firebase.js: let appId = 'default-app-id';
-    // So we use that.
-
     const usersRef = db.collection(`artifacts/${TARGET_APP_ID}/users`);
     const usersSnap = await usersRef.get();
 
-    console.log(`Found ${usersSnap.size} user(s). Processing...`);
+    console.log(`Found ${usersSnap.size} user(s). Processing in parallel...`);
 
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    for (const userDoc of usersSnap.docs) {
+    // Process all users in parallel
+    const userPromises = usersSnap.docs.map(async (userDoc) => {
         const userData = userDoc.data();
         const fcmTokens = userData.fcmTokens || [];
 
-        console.log(`User ${userDoc.id}: Found ${fcmTokens.length} tokens.`);
-
         if (fcmTokens.length === 0) {
             console.log(`Skipping User ${userDoc.id}: No tokens.`);
-            continue;
+            return;
         }
 
-        if (fcmTokens.length === 0) {
-            console.log(`Skipping User ${userDoc.id}: No tokens.`);
-            continue;
-        }
+        console.log(`User ${userDoc.id}: Found ${fcmTokens.length} tokens. Checking chores...`);
 
         let allChores = [];
 
-        // 1. Check legacy/root chores: artifacts/{appId}/users/{uid}/chores
-        const rootChoresRef = userDoc.ref.collection('chores');
-        const rootChoresSnap = await rootChoresRef.get();
-        if (!rootChoresSnap.empty) {
-            rootChoresSnap.forEach(doc => allChores.push(doc.data()));
-        }
-
-        // 2. Check lists subcollection: artifacts/{appId}/users/{uid}/lists/{listId}/chores
-        const listsRef = userDoc.ref.collection('lists');
-        const listsSnap = await listsRef.get();
-
-        if (!listsSnap.empty) {
-            for (const listDoc of listsSnap.docs) {
-                const listChoresRef = listDoc.ref.collection('chores');
-                const listChoresSnap = await listChoresRef.get();
-                if (!listChoresSnap.empty) {
-                    listChoresSnap.forEach(doc => allChores.push(doc.data()));
-                }
-            }
-        }
-
-        console.log(`User ${userDoc.id}: Found ${allChores.length} total chores (across root and ${listsSnap.size} lists).`);
-
-        if (allChores.length === 0) {
-            console.log(`Skipping User ${userDoc.id}: No chores found in root or shared lists.`);
-            continue;
-        }
-
-        let choresDue = [];
-
-        allChores.forEach(chore => {
-            if (chore.nextDue) {
-                // nextDue is stored as the midnight timestamp of the due date in the USER'S timezone.
-                // e.g. Due Dec 12 (China +8) -> Stored as Dec 11 16:00 UTC.
-                // If we are currently at Dec 11 09:00 UTC:
-                // Dec 11 16:00 <= Dec 11 09:00 is FALSE. (Not due yet)
-                // If we are at Dec 12 01:00 UTC (9am China):
-                // Dec 11 16:00 <= Dec 12 01:00 is TRUE. (Due)
-
-                const dueDate = new Date(chore.nextDue);
-
-                if (dueDate <= now) {
-                    choresDue.push(chore.name);
-                }
-            }
+        // Parallel Fetch 1: Root Chores
+        const rootChoresPromise = userDoc.ref.collection('chores').get().then(snap => {
+            return snap.docs.map(doc => doc.data());
         });
 
+        // Parallel Fetch 2: Lists Chores
+        const listsPromise = userDoc.ref.collection('lists').get().then(async (listsSnap) => {
+            if (listsSnap.empty) return [];
+
+            // For each list, fetch chores in parallel
+            const listChoresPromises = listsSnap.docs.map(listDoc =>
+                listDoc.ref.collection('chores').get().then(snap =>
+                    snap.docs.map(doc => doc.data())
+                )
+            );
+
+            const listChoresResults = await Promise.all(listChoresPromises);
+            return listChoresResults.flat();
+        });
+
+        // Wait for both sources
+        const [rootChores, listChores] = await Promise.all([rootChoresPromise, listsPromise]);
+        allChores = [...rootChores, ...listChores];
+
+        console.log(`User ${userDoc.id}: Found ${allChores.length} total chores.`);
+
+        if (allChores.length === 0) return;
+
+        // Filter Due Chores
+        const choresDue = allChores.filter(chore => {
+            if (!chore.nextDue) return false;
+            const dueDate = new Date(chore.nextDue);
+            return dueDate <= now;
+        }).map(c => c.name);
+
         if (choresDue.length > 0) {
-            console.log(`User ${userDoc.id} has ${choresDue.length} due chores. Sending to ${fcmTokens.length} tokens.`);
+            console.log(`User ${userDoc.id} has ${choresDue.length} due chores. sending...`);
 
             // Send message
             const message = {
@@ -124,23 +101,14 @@ async function sendNotifications() {
 
             try {
                 const response = await messaging.sendEachForMulticast(message);
-                console.log(response.successCount + ' messages were sent successfully');
-
-                if (response.failureCount > 0) {
-                    const failedTokens = [];
-                    response.responses.forEach((resp, idx) => {
-                        if (!resp.success) {
-                            failedTokens.push(fcmTokens[idx]);
-                        }
-                    });
-                    console.log('List of tokens that caused failures: ' + failedTokens);
-                    // Optional: remove failed tokens from DB
-                }
+                console.log(`User ${userDoc.id}: Sent! Success: ${response.successCount}, Fail: ${response.failureCount}`);
             } catch (error) {
-                console.log('Error sending message:', error);
+                console.log(`User ${userDoc.id}: Error sending message:`, error);
             }
         }
-    }
+    });
+
+    await Promise.all(userPromises);
 }
 
 sendNotifications().then(() => {
