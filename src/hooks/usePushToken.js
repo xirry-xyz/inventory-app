@@ -60,14 +60,3 @@ export const usePushToken = (user) => {
 
     return token;
 };
-                }
-            } catch (err) {
-    console.log('An error occurred while retrieving token. ', err);
-}
-        };
-
-requestPermissionAndScan();
-    }, [user]);
-
-return token;
-};
