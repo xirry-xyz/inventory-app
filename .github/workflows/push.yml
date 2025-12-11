@@ -31,4 +31,4 @@ jobs:
         # VITE_FIREBASE_APP_ID might be needed if script logic relies on it. 
         # Our script logic uses hardcoded 'default-app-id' or process.env.VITE_FIREBASE_APP_ID.
         # Let's set it if user provided it in secrets or just rely on default for now as hardcoded in script.
-      run: node scripts/send-notifications.js
+      run: node scripts/send-notifications.cjs
