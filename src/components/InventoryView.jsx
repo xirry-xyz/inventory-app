@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Share2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import InventoryTable from './InventoryTable';
 import ItemCard from './ItemCard';
 
@@ -37,30 +37,9 @@ const InventoryView = ({
                         <h3 className="font-semibold text-muted-foreground text-sm">
                             {titleText}
                         </h3>
-                        {currentList && (
-                            <Badge variant="outline" className="text-xs h-5 px-1.5 font-normal">
-                                共享列表
-                            </Badge>
-                        )}
                     </div>
-                    {currentList && currentList.type === 'shared' && (
-                        <p className="text-xs text-muted-foreground">
-                            创建者: {currentList.ownerEmail || '未知'} | 成员: {currentList.memberEmails ? currentList.memberEmails.join(', ') : `${currentList.members ? currentList.members.length : 0} 人`}
-                        </p>
-                    )}
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                    {currentList && currentList.type === 'shared' && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleShareList}
-                            className="whitespace-nowrap"
-                        >
-                            <Share2 className="mr-2 h-4 w-4" />
-                            邀请成员
-                        </Button>
-                    )}
                     <Button
                         size="sm"
                         onClick={handleAddItemClick}

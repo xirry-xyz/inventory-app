@@ -257,6 +257,41 @@ const App = () => {
                 ) : (
                     <div className="space-y-6">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                            {/* List Header Area */}
+                            {currentList && (
+                                <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h2 className="text-2xl font-bold tracking-tight">
+                                                {currentList.name}
+                                            </h2>
+                                            {/* We can re-add badge if desired, but maybe clean is better */}
+                                        </div>
+                                        <p className="text-sm text-muted-foreground flex items-center gap-2 bg-muted/50 px-2 py-1 rounded w-fit">
+                                            <span className="font-medium text-foreground">成员:</span>
+                                            {currentList.memberEmails ? currentList.memberEmails.join(', ') : `${currentList.members ? currentList.members.length : 0} 人`}
+                                        </p>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleShareList}
+                                    >
+                                        <Plus className="mr-2 h-4 w-4" /> {/* Or UserPlus/Share icon */}
+                                        邀请新成员
+                                    </Button>
+                                    {/* Ideally we use Share2 or UserPlus icon, but Plus is imported. Let's stick to Share logic if we have the icon, or standard Plus. */}
+                                </div>
+                            )}
+                            {/* Show Main List Title if currentList is null (optional, user focused on 'members' which Main List lacks) */}
+                            {!currentList && (
+                                <div className="mb-6 border-b pb-4">
+                                    <h2 className="text-2xl font-bold tracking-tight">
+                                        {mainListName || "主清单"}
+                                    </h2>
+                                </div>
+                            )}
+
                             <TabsList className="grid w-full grid-cols-3">
                                 <TabsTrigger value="chores">家务提醒</TabsTrigger>
                                 <TabsTrigger value="inventory">物品清单</TabsTrigger>
