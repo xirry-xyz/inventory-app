@@ -61,9 +61,7 @@ export const usePushToken = (user) => {
                     }
                 } else {
                     console.log('Notification permission denied.');
-                    toast({
-                        description: "请开启通知权限以接收家务提醒"
-                    });
+                    // Silent fail - don't annoy user every time they open app
                 }
             } catch (err) {
                 console.error('An error occurred while retrieving token. ', err);

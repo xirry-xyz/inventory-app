@@ -24,6 +24,16 @@ export const useChoreNotifications = (chores) => {
                 return;
             }
 
+            // Frequency Check: 2.5 hours (9000000 ms)
+            const LAST_NOTIFIED_KEY = 'last_chore_notification_time';
+            const FREQUENCY = 2.5 * 60 * 60 * 1000;
+            const lastNotified = localStorage.getItem(LAST_NOTIFIED_KEY);
+
+            if (lastNotified && (now.getTime() - parseInt(lastNotified) < FREQUENCY)) {
+                console.log('Too soon for next notification.');
+                return;
+            }
+
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
             let hasNotified = false;
@@ -43,7 +53,8 @@ export const useChoreNotifications = (chores) => {
                             body: `这项家务需要完成了！`,
                             tag: `chore-${chore.id}` // Tag check to replace existing notifications if needed
                         });
-                        hasNotified = true; // Just notify for the first one found per check to avoid flooding
+                        hasNotified = true;
+                        localStorage.setItem(LAST_NOTIFIED_KEY, now.getTime().toString());
                     }
                 }
             });
