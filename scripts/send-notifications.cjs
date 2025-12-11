@@ -96,7 +96,8 @@ async function sendNotifications() {
                     title: 'HomeSync 家务提醒',
                     body: `今天有 ${choresDue.length} 项家务待完成: ${choresDue.slice(0, 3).join(', ')}${choresDue.length > 3 ? '...' : ''}`
                 },
-                tokens: fcmTokens
+                // Documentation says: sendEachForMulticast(message) where message has 'tokens' array.
+                tokens: [...new Set(fcmTokens)]
             };
 
             try {
