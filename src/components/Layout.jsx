@@ -94,9 +94,9 @@ const Layout = ({
 
     const handleDeleteListClick = (list) => {
         if (list.id === 'default') {
-            const privateListsCount = sharedLists ? sharedLists.filter(l => l.type === 'private').length : 0;
-            if (privateListsCount === 0) {
-                showStatus('无法删除：这是您唯一的私有列表。', true);
+            const totalListsCount = sharedLists ? sharedLists.length : 0;
+            if (totalListsCount === 0) {
+                showStatus('无法删除：这是您唯一的列表。', true);
                 return;
             }
             setDeleteMessage('确定要清空并删除主清单吗？注意：这会清空主清单中的所有物品。');

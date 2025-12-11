@@ -142,10 +142,10 @@ export const useSharedLists = (user) => {
         if (!user || !user.uid) return;
 
         if (listId === 'default') {
-            // Check if other private lists exist
-            const privateListsCount = sharedLists.filter(l => l.type === 'private').length;
-            if (privateListsCount === 0) {
-                showStatus('无法删除：这是您唯一的私有列表。', true);
+            // Check if other lists exist (regardless of type)
+            const otherListsCount = sharedLists.length;
+            if (otherListsCount === 0) {
+                showStatus('无法删除：这是您唯一的列表。', true);
                 return false;
             }
 
