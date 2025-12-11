@@ -29,7 +29,7 @@ const TARGET_APP_ID = process.env.VITE_FIREBASE_APP_ID || 'default-app-id'; // W
 // Let's rely on standard path for now or scan.
 
 async function sendNotifications() {
-    console.log('Starting notification check...');
+    console.log(`Starting notification check for App ID: ${TARGET_APP_ID}`);
     // We need to iterate over users
     // Path: artifacts/{appId}/users/{uid}
 

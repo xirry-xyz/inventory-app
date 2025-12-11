@@ -27,6 +27,7 @@ jobs:
     - name: Run Notification Script
       env:
         FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
         # Default App ID if needed, or matched from env
         # VITE_FIREBASE_APP_ID might be needed if script logic relies on it. 
         # Our script logic uses hardcoded 'default-app-id' or process.env.VITE_FIREBASE_APP_ID.
