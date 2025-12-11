@@ -53,22 +53,44 @@ async function sendNotifications() {
             continue;
         }
 
-        // Check chores for this user
-        // Chores path: artifacts/{appId}/users/{uid}/chores
-        const choresRef = userDoc.ref.collection('chores');
-        const choresSnap = await choresRef.get();
+        if (fcmTokens.length === 0) {
+            console.log(`Skipping User ${userDoc.id}: No tokens.`);
+            continue;
+        }
 
-        console.log(`User ${userDoc.id}: Found ${choresSnap.size} chores.`);
+        let allChores = [];
 
-        if (choresSnap.empty) {
-            console.log(`Skipping User ${userDoc.id}: No chores.`);
+        // 1. Check legacy/root chores: artifacts/{appId}/users/{uid}/chores
+        const rootChoresRef = userDoc.ref.collection('chores');
+        const rootChoresSnap = await rootChoresRef.get();
+        if (!rootChoresSnap.empty) {
+            rootChoresSnap.forEach(doc => allChores.push(doc.data()));
+        }
+
+        // 2. Check lists subcollection: artifacts/{appId}/users/{uid}/lists/{listId}/chores
+        const listsRef = userDoc.ref.collection('lists');
+        const listsSnap = await listsRef.get();
+
+        if (!listsSnap.empty) {
+            for (const listDoc of listsSnap.docs) {
+                const listChoresRef = listDoc.ref.collection('chores');
+                const listChoresSnap = await listChoresRef.get();
+                if (!listChoresSnap.empty) {
+                    listChoresSnap.forEach(doc => allChores.push(doc.data()));
+                }
+            }
+        }
+
+        console.log(`User ${userDoc.id}: Found ${allChores.length} total chores (across root and ${listsSnap.size} lists).`);
+
+        if (allChores.length === 0) {
+            console.log(`Skipping User ${userDoc.id}: No chores found in root or shared lists.`);
             continue;
         }
 
         let choresDue = [];
 
-        choresSnap.forEach(doc => {
-            const chore = doc.data();
+        allChores.forEach(chore => {
             if (chore.nextDue) {
                 const dueDate = new Date(chore.nextDue);
                 const dueDay = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
