@@ -96,38 +96,91 @@ const SettingsPage = ({
 
 // Internal Debug Component
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, arrayUnion } from 'firebase/firestore';
 import { db, appId } from '../firebase';
+import { useToast } from "@/hooks/use-toast";
+import { getMessaging, getToken } from "firebase/messaging";
 
 const DebugInfo = ({ user }) => {
     const [info, setInfo] = useState({ loading: true });
+    const { toast } = useToast();
+    const [repairing, setRepairing] = useState(false);
+
+    const check = async () => {
+        setInfo(prev => ({ ...prev, loading: true }));
+        try {
+            // Check if user doc exists
+            const userRef = doc(db, `artifacts/${appId}/users/${user.uid}`);
+            const snap = await getDoc(userRef);
+            const data = snap.exists() ? snap.data() : null;
+
+            setInfo({
+                loading: false,
+                appId: appId,
+                path: `artifacts/${appId}/users/${user.uid}`,
+                exists: snap.exists(),
+                tokenCount: data?.fcmTokens?.length || 0,
+                tokens: data?.fcmTokens || []
+            });
+        } catch (e) {
+            setInfo({ loading: false, error: e.message });
+        }
+    };
 
     useEffect(() => {
         if (!user) {
             setInfo({ loading: false, error: 'No User' });
             return;
         }
-        const check = async () => {
-            try {
-                // Check if user doc exists
-                const userRef = doc(db, `artifacts/${appId}/users/${user.uid}`);
-                const snap = await getDoc(userRef);
-                const data = snap.exists() ? snap.data() : null;
-
-                setInfo({
-                    loading: false,
-                    appId: appId,
-                    path: `artifacts/${appId}/users/${user.uid}`,
-                    exists: snap.exists(),
-                    tokenCount: data?.fcmTokens?.length || 0,
-                    tokens: data?.fcmTokens || []
-                });
-            } catch (e) {
-                setInfo({ loading: false, error: e.message });
-            }
-        };
         check();
     }, [user]);
+
+    const handleRepair = async () => {
+        if (!user) return;
+        setRepairing(true);
+        try {
+            // 1. Try to get Token first
+            let currentToken = null;
+            if ('Notification' in window && Notification.permission === 'granted') {
+                const messaging = getMessaging();
+                const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+                if (vapidKey) {
+                    currentToken = await getToken(messaging, { vapidKey });
+                }
+            }
+
+            // 2. Force Write User Doc
+            const userRef = doc(db, `artifacts/${appId}/users/${user.uid}`);
+            const updateData = {
+                email: user.email,
+                lastSeen: new Date().toISOString()
+            };
+
+            if (currentToken) {
+                updateData.fcmTokens = arrayUnion(currentToken);
+            }
+
+            await setDoc(userRef, updateData, { merge: true });
+
+            toast({
+                title: "修复成功",
+                description: "用户数据已强制写入数据库，Token: " + (currentToken ? "已更新" : "未获取(权限/环境限制)")
+            });
+
+            // 3. Refresh info
+            await check();
+
+        } catch (e) {
+            console.error(e);
+            toast({
+                variant: "destructive",
+                title: "修复失败",
+                description: e.message
+            });
+        } finally {
+            setRepairing(false);
+        }
+    };
 
     if (info.loading) return <div>Checking DB...</div>;
     if (info.error) return <div className="text-red-500">Error: {info.error}</div>;
@@ -137,7 +190,7 @@ const DebugInfo = ({ user }) => {
             <p><span className="text-muted-foreground">App ID:</span> {info.appId}</p>
             <p><span className="text-muted-foreground">Path:</span> {info.path}</p>
             <p><span className="text-muted-foreground">Doc Exists:</span> {info.exists ? '✅ YES' : '❌ NO'}</p>
-            <p><span className="text-muted-foreground">Tokens:</span> {info.tokenCount}</p>
+            <p><span className="text-muted-foreground">Token Count:</span> {info.tokenCount}</p>
             {info.tokenCount > 0 && (
                 <div className="mt-1 pl-2 border-l-2 border-green-500/20">
                     {info.tokens.map((t, i) => (
@@ -145,6 +198,17 @@ const DebugInfo = ({ user }) => {
                     ))}
                 </div>
             )}
+            <div className="pt-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRepair}
+                    disabled={repairing}
+                    className="h-7 text-xs"
+                >
+                    {repairing ? "修复中..." : "🛠️ 强制同步数据"}
+                </Button>
+            </div>
         </>
     );
 };
