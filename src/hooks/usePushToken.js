@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { getMessaging, getToken } from "firebase/messaging";
 import { doc, setDoc, arrayUnion } from "firebase/firestore";
 import { db, appId } from '../firebase';
-import { toast } from "sonner"; // Import sonner for visibility
+import { useToast } from "@/hooks/use-toast";
 
 export const usePushToken = (user) => {
     const [token, setToken] = useState(null);
+    const { toast } = useToast();
 
     useEffect(() => {
         if (!user) return;
@@ -20,7 +21,11 @@ export const usePushToken = (user) => {
                     const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
                     if (!vapidKey) {
                         console.warn("VITE_FIREBASE_VAPID_KEY is missing.");
-                        toast.error("VITE_FIREBASE_VAPID_KEY 未配置，无法接收通知！");
+                        toast({
+                            variant: "destructive",
+                            title: "配置缺失",
+                            description: "VITE_FIREBASE_VAPID_KEY 未配置，无法接收通知！"
+                        });
                         return;
                     }
 
@@ -35,28 +40,36 @@ export const usePushToken = (user) => {
                                 fcmTokens: arrayUnion(currentToken)
                             }, { merge: true });
                             console.log("Token saved/updated for user:", user.uid);
-                            // Only show success once per session or if it's new could be annoying, 
-                            // but for debugging this is crucial.
-                            // toast.success("通知服务连接成功！"); 
+                            // silent success
                         } catch (e) {
                             console.error("Error saving token:", e);
-                            toast.error(`Token 保存失败: ${e.message}`);
+                            toast({
+                                variant: "destructive",
+                                title: "Token 保存失败",
+                                description: e.message
+                            });
                         }
                     } else {
                         console.log('No registration token available.');
                     }
                 } else {
                     console.log('Notification permission denied.');
-                    toast.warning("请开启通知权限以接收家务提醒");
+                    toast({
+                        description: "请开启通知权限以接收家务提醒"
+                    });
                 }
             } catch (err) {
                 console.error('An error occurred while retrieving token. ', err);
-                toast.error(`通知服务出错: ${err.message}`);
+                toast({
+                    variant: "destructive",
+                    title: "通知服务出错",
+                    description: err.message
+                });
             }
         };
 
         requestPermissionAndScan();
-    }, [user]);
+    }, [user, toast]);
 
     return token;
 };
