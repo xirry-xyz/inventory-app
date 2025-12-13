@@ -55,46 +55,45 @@ const SettingsPage = ({
                                         <div className="flex flex-col gap-1">
                                             <span className="text-destructive flex items-center gap-1 font-medium">
                                                 <AlertCircle className="h-3 w-3" /> 未连接
-                                            </span>
-                                            {pushError && <span className="text-xs text-muted-foreground">原因: {pushError}</span>}
-                                            {permissionStatus === 'denied' && <span className="text-xs text-destructive font-bold">请检查浏览器通知权限！</span>}
-                                            {/* Show button if default OR if granted but disconnected (error exists or not loading) */}
-                                            {/* Simplified logic: If not connected and not loading, show button/instructions */}
-                                            {(!pushToken && !pushLoading) && (
-                                                permissionStatus === 'default' ? (
-                                                    <Button
-                                                        variant="secondary"
-                                                        size="sm"
-                                                        className="h-6 text-xs px-2 mt-1 w-fit"
-                                                        onClick={enablePush}
-                                                    >
-                                                        <Bell className="w-3 h-3 mr-1" /> 开启通知推送
-                                                    </Button>
-                                                ) : permissionStatus === 'granted' ? (
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="h-6 text-xs px-2 mt-1 w-fit"
-                                                        onClick={enablePush}
-                                                    >
-                                                        <Bell className="w-3 h-3 mr-1" /> 重试连接
-                                                    </Button>
-                                                ) : null
-                                            )}
-                                            {pushLoading && (
-                                                <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                                    <Loader2 className="h-3 w-3 animate-spin" /> 连接中...
-                                                </span>
-                                            )}
+                                                {pushError && <span className="text-xs text-muted-foreground">原因: {pushError}</span>}
+                                                {permissionStatus === 'denied' && <span className="text-xs text-destructive font-bold">请检查浏览器通知权限！</span>}
+                                                {/* Show button if default OR if granted but disconnected (error exists or not loading) */}
+                                                {/* Simplified logic: If not connected and not loading, show button/instructions */}
+                                                {(!pushToken && !pushLoading) && (
+                                                    permissionStatus === 'granted' ? (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-6 text-xs px-2 mt-1 w-fit"
+                                                            onClick={enablePush}
+                                                        >
+                                                            <Bell className="w-3 h-3 mr-1" /> 重试连接
+                                                        </Button>
+                                                    ) : ( // Default catch-all: Show "Enable" for 'default' or any other falsy/unexpected status
+                                                        <Button
+                                                            variant="secondary"
+                                                            size="sm"
+                                                            className="h-6 text-xs px-2 mt-1 w-fit"
+                                                            onClick={enablePush}
+                                                        >
+                                                            <Bell className="w-3 h-3 mr-1" /> 开启通知推送
+                                                        </Button>
+                                                    )
+                                                )}
+                                                {pushLoading && (
+                                                    <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                                        <Loader2 className="h-3 w-3 animate-spin" /> 连接中...
+                                                    </span>
+                                                )}
 
-                                            {/* DEBUG BLOCK - REMOVE LATER */}
-                                            <div className="mt-2 p-2 bg-muted rounded text-[10px] font-mono whitespace-pre-wrap text-muted-foreground">
-                                                Debug:
-                                                Status: {permissionStatus}
-                                                Loading: {pushLoading ? 'true' : 'false'}
-                                                Error: {JSON.stringify(pushError)}
-                                                Token: {pushToken ? 'Yes' : 'No'}
-                                            </div>
+                                                {/* DEBUG BLOCK - REMOVE LATER */}
+                                                <div className="mt-2 p-2 bg-muted rounded text-[10px] font-mono whitespace-pre-wrap text-muted-foreground">
+                                                    Debug:
+                                                    Status: {permissionStatus}
+                                                    Loading: {pushLoading ? 'true' : 'false'}
+                                                    Error: {JSON.stringify(pushError)}
+                                                    Token: {pushToken ? 'Yes' : 'No'}
+                                                </div>
                                         </div>
                                     )}
                                 </div>
