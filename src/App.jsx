@@ -87,7 +87,7 @@ const App = () => {
     // Call notification hook (Client-side)
     useChoreNotifications(chores);
     // Call token registration hook (Server-side)
-    usePushToken(user);
+    const pushToken = usePushToken(user);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('全部');

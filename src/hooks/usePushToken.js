@@ -47,7 +47,13 @@ export const usePushToken = (user) => {
                                 fcmTokens: arrayUnion(currentToken)
                             }, { merge: true });
                             console.log("Token saved/updated for user:", user.uid);
-                            // silent success
+                            console.log("Token saved/updated for user:", user.uid);
+                            // silent success -> explicit success for debug
+                            toast({
+                                title: "推送连接成功",
+                                description: "设备已注册，可以接收通知。",
+                                duration: 2000
+                            });
                         } catch (e) {
                             console.error("Error saving token:", e);
                             toast({

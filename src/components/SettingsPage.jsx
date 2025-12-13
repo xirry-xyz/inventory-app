@@ -17,7 +17,9 @@ const SettingsPage = ({
     setShowAuthModal,
     handleGoogleSignIn,
     handleSignOut,
-    showStatus
+    handleSignOut,
+    showStatus,
+    pushToken
 }) => {
     const isGoogleUser = !!user && !!user.uid;
 
@@ -38,6 +40,18 @@ const SettingsPage = ({
                                 </div>
                                 <p className="text-sm text-muted-foreground">用户: {user.email || user.displayName || 'Google 用户'}</p>
                                 <p className="text-xs text-muted-foreground/50 break-all font-mono">ID: {userId}</p>
+                                <div className="flex items-center gap-2 text-sm mt-2">
+                                    <span className="text-muted-foreground">推送服务:</span>
+                                    {pushToken ? (
+                                        <span className="text-green-600 flex items-center gap-1 font-medium">
+                                            <CheckCircle2 className="h-3 w-3" /> 已连接
+                                        </span>
+                                    ) : (
+                                        <span className="text-destructive flex items-center gap-1 font-medium">
+                                            <AlertCircle className="h-3 w-3" /> 未连接 (请检查浏览器权限)
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             <Button
                                 variant="destructive"
