@@ -115,9 +115,10 @@ export const usePushToken = (user) => {
 
         // Check current permission status without asking
         if (typeof Notification !== 'undefined' && 'Notification' in window) {
-            setPermissionStatus(Notification.permission);
+            const status = Notification.permission;
+            setPermissionStatus(status || 'default');
             // If already granted, try to auto-register (which will set loading)
-            if (Notification.permission === 'granted') {
+            if (status === 'granted') {
                 register();
             }
         }
