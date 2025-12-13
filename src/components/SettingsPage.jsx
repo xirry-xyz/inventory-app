@@ -22,7 +22,8 @@ const SettingsPage = ({
 
     pushToken,
     pushError,
-    permissionStatus
+    permissionStatus,
+    enablePush
 }) => {
     const isGoogleUser = !!user && !!user.uid;
 
@@ -56,6 +57,16 @@ const SettingsPage = ({
                                             </span>
                                             {pushError && <span className="text-xs text-muted-foreground">原因: {pushError}</span>}
                                             {permissionStatus === 'denied' && <span className="text-xs text-destructive font-bold">请检查浏览器通知权限！</span>}
+                                            {permissionStatus === 'default' && (
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    className="h-6 text-xs px-2 mt-1 w-fit"
+                                                    onClick={enablePush}
+                                                >
+                                                    <Bell className="w-3 h-3 mr-1" /> 开启通知推送
+                                                </Button>
+                                            )}
                                         </div>
                                     )}
                                 </div>
