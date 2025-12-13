@@ -94,8 +94,17 @@ async function sendNotifications() {
             const message = {
                 notification: {
                     title: 'HomeSync 家务提醒',
-                    body: `今天有 ${choresDue.length} 项家务待完成: ${choresDue.slice(0, 3).join(', ')}${choresDue.length > 3 ? '...' : ''}`,
-                    tag: 'daily-chore-reminder' // Replacing existing notifications with same tag
+                    body: `今天有 ${choresDue.length} 项家务待完成: ${choresDue.slice(0, 3).join(', ')}${choresDue.length > 3 ? '...' : ''}`
+                },
+                android: {
+                    notification: {
+                        tag: 'daily-chore-reminder'
+                    }
+                },
+                webpush: {
+                    notification: {
+                        tag: 'daily-chore-reminder'
+                    }
                 },
                 // Documentation says: sendEachForMulticast(message) where message has 'tokens' array.
                 tokens: [...new Set(fcmTokens)]
