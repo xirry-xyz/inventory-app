@@ -161,6 +161,27 @@ const SettingsPage = ({
                         重置通知推送
                     </Button>
                     <p className="text-xs text-muted-foreground">如果遇到收不到通知或重复通知的问题，请尝试此操作。</p>
+
+                    {/* Permission Blocked Guidance */}
+                    {pushError && pushError.includes("User Blocked") && (
+                        <div className="bg-destructive/10 text-destructive text-xs p-3 rounded mt-2 border border-destructive/20">
+                            <strong>需要在系统设置中开启：</strong>
+                            <ol className="list-decimal list-inside mt-1 space-y-1">
+                                <li>回到手机主屏幕</li>
+                                <li>打开 <strong>设置 (Settings)</strong></li>
+                                <li>找到本应用 <strong>HomeSync</strong> (或网页名称)</li>
+                                <li>点击 <strong>通知 (Notifications)</strong></li>
+                                <li>开启 <strong>允许通知</strong></li>
+                                <li>完成后回到此处刷新页面</li>
+                            </ol>
+                        </div>
+                    )}
+                </div>
+
+                <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground/30 font-mono">
+                        v{__APP_VERSION__}
+                    </p>
                 </div>
 
                 {configError && (
