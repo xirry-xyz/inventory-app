@@ -19,7 +19,7 @@ const SettingsPage = ({
     handleSignOut,
 
     showStatus,
-    showStatus,
+
     pushToken,
     pushError,
     permissionStatus
