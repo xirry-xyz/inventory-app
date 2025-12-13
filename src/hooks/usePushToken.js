@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getMessaging, getToken } from "firebase/messaging";
+import { getMessaging, getToken, isSupported } from "firebase/messaging";
 import { doc, setDoc, arrayUnion } from "firebase/firestore";
 import { db, appId } from '../firebase';
 import { useToast } from "@/hooks/use-toast";
@@ -13,17 +13,24 @@ export const usePushToken = (user) => {
     useEffect(() => {
         if (!user) return;
 
-        const messaging = getMessaging();
-
         const requestPermissionAndScan = async () => {
             // Safety check for browsers without Notification API
             if (typeof Notification === 'undefined' || !('Notification' in window)) {
                 console.log("This browser does not support notifications.");
-                setTokenError("Browser not supported");
+                setTokenError("Browser Notification API missing");
                 return;
             }
 
             try {
+                // Check if Firebase Messaging is supported
+                const supported = await isSupported();
+                if (!supported) {
+                    setTokenError("Firebase Messaging Not Supported");
+                    return;
+                }
+
+                const messaging = getMessaging();
+
                 const permission = await Notification.requestPermission();
                 setPermissionStatus(permission);
 
