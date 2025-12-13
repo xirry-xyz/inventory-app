@@ -19,7 +19,10 @@ const SettingsPage = ({
     handleSignOut,
 
     showStatus,
-    pushToken
+    showStatus,
+    pushToken,
+    pushError,
+    permissionStatus
 }) => {
     const isGoogleUser = !!user && !!user.uid;
 
@@ -47,9 +50,13 @@ const SettingsPage = ({
                                             <CheckCircle2 className="h-3 w-3" /> 已连接
                                         </span>
                                     ) : (
-                                        <span className="text-destructive flex items-center gap-1 font-medium">
-                                            <AlertCircle className="h-3 w-3" /> 未连接 (请检查浏览器权限)
-                                        </span>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-destructive flex items-center gap-1 font-medium">
+                                                <AlertCircle className="h-3 w-3" /> 未连接
+                                            </span>
+                                            {pushError && <span className="text-xs text-muted-foreground">原因: {pushError}</span>}
+                                            {permissionStatus === 'denied' && <span className="text-xs text-destructive font-bold">请检查浏览器通知权限！</span>}
+                                        </div>
                                     )}
                                 </div>
                             </div>
