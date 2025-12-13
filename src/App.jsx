@@ -87,7 +87,7 @@ const App = () => {
     // Call notification hook (Client-side)
     useChoreNotifications(chores);
     // Call token registration hook (Server-side)
-    const { token: pushToken, error: pushError, permissionStatus, register: enablePush } = usePushToken(user);
+    const { token: pushToken, error: pushError, permissionStatus, register: enablePush, isLoading: pushLoading } = usePushToken(user);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState('全部');
@@ -410,9 +410,7 @@ const App = () => {
                         addItem={handleAddItem}
                         user={user}
                         showStatus={showStatus}
-                        pushError={pushError}
-                        permissionStatus={permissionStatus}
-                        enablePush={enablePush}
+                        showStatus={showStatus}
                     />
                 </CustomModal>
 

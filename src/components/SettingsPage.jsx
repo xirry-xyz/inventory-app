@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { LogOut, Chrome, AlertCircle, CheckCircle2, Bell } from 'lucide-react';
+import { LogOut, Chrome, AlertCircle, CheckCircle2, Bell, Loader2 } from 'lucide-react';
 
 const SettingsPage = ({
     user,
@@ -23,7 +23,8 @@ const SettingsPage = ({
     pushToken,
     pushError,
     permissionStatus,
-    enablePush
+    enablePush,
+    pushLoading
 }) => {
     const isGoogleUser = !!user && !!user.uid;
 
@@ -57,15 +58,33 @@ const SettingsPage = ({
                                             </span>
                                             {pushError && <span className="text-xs text-muted-foreground">原因: {pushError}</span>}
                                             {permissionStatus === 'denied' && <span className="text-xs text-destructive font-bold">请检查浏览器通知权限！</span>}
-                                            {permissionStatus === 'default' && (
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    className="h-6 text-xs px-2 mt-1 w-fit"
-                                                    onClick={enablePush}
-                                                >
-                                                    <Bell className="w-3 h-3 mr-1" /> 开启通知推送
-                                                </Button>
+                                            {/* Show button if default OR if granted but disconnected (error exists or not loading) */}
+                                            {/* Simplified logic: If not connected and not loading, show button/instructions */}
+                                            {(!pushToken && !pushLoading) && (
+                                                permissionStatus === 'default' ? (
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        className="h-6 text-xs px-2 mt-1 w-fit"
+                                                        onClick={enablePush}
+                                                    >
+                                                        <Bell className="w-3 h-3 mr-1" /> 开启通知推送
+                                                    </Button>
+                                                ) : permissionStatus === 'granted' ? (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-6 text-xs px-2 mt-1 w-fit"
+                                                        onClick={enablePush}
+                                                    >
+                                                        <Bell className="w-3 h-3 mr-1" /> 重试连接
+                                                    </Button>
+                                                ) : null
+                                            )}
+                                            {pushLoading && (
+                                                <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                                    <Loader2 className="h-3 w-3 animate-spin" /> 连接中...
+                                                </span>
                                             )}
                                         </div>
                                     )}
