@@ -32,7 +32,10 @@ export const usePushToken = (user) => {
                 return;
             }
 
-            const permission = await Notification.requestPermission();
+            let permission = Notification.permission;
+            if (permission !== 'granted') {
+                permission = await Notification.requestPermission();
+            }
             setPermissionStatus(permission);
 
             if (permission === 'granted') {
