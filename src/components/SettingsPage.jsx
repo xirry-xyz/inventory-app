@@ -17,7 +17,7 @@ const SettingsPage = ({
     setShowAuthModal,
     handleGoogleSignIn,
     handleSignOut,
-    handleSignOut,
+
     showStatus,
     pushToken
 }) => {
