@@ -246,6 +246,11 @@ const App = () => {
                         handleGoogleSignIn={handleGoogleSignInWrapper}
                         handleSignOut={handleSignOutWrapper}
                         showStatus={showStatus}
+                        pushToken={pushToken}
+                        pushError={pushError}
+                        permissionStatus={permissionStatus}
+                        enablePush={enablePush}
+                        pushLoading={pushLoading}
                     />
                 ) : activeTab === 'notifications' ? (
                     <NotificationPage
