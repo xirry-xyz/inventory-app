@@ -82,8 +82,6 @@ export const usePushToken = (user) => {
         requestPermissionAndScan();
     }, [user, toast]);
 
-    requestPermissionAndScan();
-}, [user, toast]);
 
-return { token, error: tokenError, permissionStatus };
+    return { token, error: tokenError, permissionStatus };
 };
