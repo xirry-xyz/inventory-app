@@ -410,7 +410,7 @@ const App = () => {
                         addItem={handleAddItem}
                         user={user}
                         showStatus={showStatus}
-                        showStatus={showStatus}
+
                     />
                 </CustomModal>
 

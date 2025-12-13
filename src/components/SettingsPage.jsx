@@ -85,17 +85,17 @@ const SettingsPage = ({
                                                         <Loader2 className="h-3 w-3 animate-spin" /> 连接中...
                                                     </span>
                                                 )}
-
-                                                {/* DEBUG BLOCK - REMOVE LATER */}
-                                                <div className="mt-2 p-2 bg-muted rounded text-[10px] font-mono whitespace-pre-wrap text-muted-foreground">
-                                                    Debug:
-                                                    Status: {permissionStatus}
-                                                    Loading: {pushLoading ? 'true' : 'false'}
-                                                    Error: {JSON.stringify(pushError)}
-                                                    Token: {pushToken ? 'Yes' : 'No'}
-                                                </div>
                                         </div>
                                     )}
+
+                                    {/* DEBUG BLOCK - REMOVE LATER */}
+                                    <div className="mt-2 p-2 bg-muted rounded text-[10px] font-mono whitespace-pre-wrap text-muted-foreground">
+                                        Debug:
+                                        Status: {permissionStatus}
+                                        Loading: {pushLoading ? 'true' : 'false'}
+                                        Error: {JSON.stringify(pushError)}
+                                        Token: {pushToken ? 'Yes' : 'No'}
+                                    </div>
                                 </div>
                             </div>
                             <Button
