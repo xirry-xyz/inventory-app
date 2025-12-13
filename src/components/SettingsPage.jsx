@@ -89,14 +89,7 @@ const SettingsPage = ({
                                         </div>
                                     )}
 
-                                    {/* DEBUG BLOCK - REMOVE LATER */}
-                                    <div className="mt-2 p-2 bg-muted rounded text-[10px] font-mono whitespace-pre-wrap text-muted-foreground">
-                                        Debug:
-                                        Status: {permissionStatus}
-                                        Loading: {pushLoading ? 'true' : 'false'}
-                                        Error: {JSON.stringify(pushError)}
-                                        Token: {pushToken ? 'Yes' : 'No'}
-                                    </div>
+
                                 </div>
                             </div>
                             <Button

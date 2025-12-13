@@ -23,7 +23,7 @@ jobs:
         cache: 'npm'
 
     - name: Install Dependencies
-      run: npm install firebase-admin date-fns
+      run: npm ci
 
     - name: Run Notification Script
       env:

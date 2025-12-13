@@ -83,11 +83,7 @@ export const usePushToken = (user) => {
                         }, { merge: true });
 
                         console.log("Token saved/updated for user:", user.uid);
-                        toast({
-                            title: "推送连接成功",
-                            description: "设备已注册，可以接收通知。",
-                            duration: 2000
-                        });
+
                     } else {
                         console.log('No registration token available.');
                         setTokenError("No Token Available");
