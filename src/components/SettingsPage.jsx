@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { LogOut, Chrome, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { LogOut, Chrome, AlertCircle, CheckCircle2, Bell } from 'lucide-react';
 
 const SettingsPage = ({
     user,
@@ -70,17 +70,50 @@ const SettingsPage = ({
                     )}
                 </div>
 
-                {configError && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>配置错误</AlertTitle>
-                        <AlertDescription>
-                            {configError}
-                        </AlertDescription>
-                    </Alert>
-                )}
-            </CardContent>
-        </Card>
+            </div>
+
+            <div className="bg-card border rounded-lg p-6 space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">高级设置</h3>
+                <Button
+                    variant="outline"
+                    onClick={async () => {
+                        if (!user) return;
+                        if (!confirm('确定要重置通知设置吗？这将清除所有已注册的设备，您需要在刷新页面后重新授权。')) return;
+
+                        try {
+                            const { doc, updateDoc, deleteField } = await import('firebase/firestore');
+                            const { db, appId } = await import('../firebase');
+
+                            const userRef = doc(db, `artifacts/${appId}/users/${user.uid}`);
+                            await updateDoc(userRef, {
+                                fcmTokens: deleteField()
+                            });
+
+                            showStatus("通知设置已重置，正在刷新...", false);
+                            setTimeout(() => window.location.reload(), 1500);
+                        } catch (e) {
+                            console.error(e);
+                            showStatus("重置失败: " + e.message, true);
+                        }
+                    }}
+                >
+                    <Bell className="mr-2 h-4 w-4" />
+                    重置通知推送
+                </Button>
+                <p className="text-xs text-muted-foreground">如果遇到收不到通知或重复通知的问题，请尝试此操作。</p>
+            </div>
+
+            {configError && (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>配置错误</AlertTitle>
+                    <AlertDescription>
+                        {configError}
+                    </AlertDescription>
+                </Alert>
+            )}
+        </CardContent>
+        </Card >
     );
 };
 
