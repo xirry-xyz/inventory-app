@@ -94,7 +94,7 @@ export const useChores = (user, currentList) => {
     };
 
     const deleteChore = async (id, showStatus) => {
-        if (!window.confirm('确定要删除这个家务吗？')) return;
+
         try {
             const path = getChoresPath();
             const choreRef = doc(db, path, id);

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ConfirmDialog } from './ConfirmDialog';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,15 +97,21 @@ const ChoreList = ({ chores, onComplete, onDelete, onEdit, user }) => {
                                 </div>
 
                                 <div className="flex justify-end gap-2 pt-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                        onClick={() => onDelete(chore.id)}
-                                        disabled={!user}
+                                    <ConfirmDialog
+                                        title="确定要删除这个家务吗？"
+                                        description="此操作无法撤销，任务将被永久删除。"
+                                        actionText="删除"
+                                        onConfirm={() => onDelete(chore.id)}
                                     >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                            disabled={!user}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </ConfirmDialog>
                                     <Button
                                         size="sm"
                                         className="h-8"

@@ -1,4 +1,5 @@
 import React from 'react';
+import { ConfirmDialog } from './ConfirmDialog';
 import {
     Table,
     TableBody,
@@ -150,7 +151,7 @@ const InventoryTable = ({ items, updateStock, deleteItem, user, markAsReplaced }
                                                     <History className="h-4 w-4 text-green-500" />}
 
                                             <span className={`text-sm ${periodicInfo.status === 'expired' ? 'text-destructive font-medium' :
-                                                    periodicInfo.status === 'warning' ? 'text-orange-500' : 'text-muted-foreground'
+                                                periodicInfo.status === 'warning' ? 'text-orange-500' : 'text-muted-foreground'
                                                 }`}>
                                                 {periodicInfo.status === 'expired' ? `超期 ${periodicInfo.days} 天` :
                                                     periodicInfo.status === 'warning' ? `${periodicInfo.days} 天后` :
@@ -172,15 +173,21 @@ const InventoryTable = ({ items, updateStock, deleteItem, user, markAsReplaced }
                                     )}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                        onClick={() => deleteItem(item.id)}
-                                        disabled={!isUserLoggedIn}
+                                    <ConfirmDialog
+                                        title="确定要删除此项目吗？"
+                                        description="此操作无法撤销。"
+                                        actionText="删除"
+                                        onConfirm={() => deleteItem(item.id)}
                                     >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                            disabled={!isUserLoggedIn}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </ConfirmDialog>
                                 </TableCell>
                             </TableRow>
                         );

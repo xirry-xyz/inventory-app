@@ -187,7 +187,7 @@ export const useInventory = (user, configError, isAuthReady, currentList) => {
 
         if (!inventoryCollectionPath) return;
 
-        if (!window.confirm('确定要删除此项目吗？')) return;
+
 
         try {
             const itemRef = doc(db, inventoryCollectionPath, id);

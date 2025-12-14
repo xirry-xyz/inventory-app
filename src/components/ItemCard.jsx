@@ -1,4 +1,5 @@
 import React from 'react';
+import { ConfirmDialog } from './ConfirmDialog';
 import {
     Card, CardContent, CardFooter
 } from "@/components/ui/card";
@@ -79,15 +80,21 @@ const ItemCard = ({ item, updateStock, deleteItem, user, markAsReplaced, isMobil
                         ) : (
                             <Badge variant="outline" className="h-6 text-green-600 border-green-200 px-1.5">充足</Badge>
                         )}
-                        <Button
-                            size="icon"
-                            variant="ghost"
-                            className={`h-7 w-7 text-muted-foreground hover:text-destructive ${isMobile ? '' : 'sm:opacity-0 sm:group-hover:opacity-100 transition-opacity'}`}
-                            onClick={() => deleteItem(item.id)}
-                            disabled={!isUserLoggedIn}
+                        <ConfirmDialog
+                            title="确定要删除此项目吗？"
+                            description="此操作无法撤销。"
+                            actionText="删除"
+                            onConfirm={() => deleteItem(item.id)}
                         >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                className={`h-7 w-7 text-muted-foreground hover:text-destructive ${isMobile ? '' : 'sm:opacity-0 sm:group-hover:opacity-100 transition-opacity'}`}
+                                disabled={!isUserLoggedIn}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </ConfirmDialog>
                     </div>
                 </div>
 
