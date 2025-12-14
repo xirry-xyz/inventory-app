@@ -361,7 +361,6 @@ const App = () => {
                                                 activeTab="inventory"
                                                 titleText={titleText}
                                                 currentList={currentList}
-                                                handleShareList={handleShareList}
                                                 handleAddItemClick={handleAddItemClick}
                                                 user={user}
                                                 itemsList={itemsList}
@@ -377,7 +376,6 @@ const App = () => {
                                                 activeTab="restock"
                                                 titleText={titleText}
                                                 currentList={currentList}
-                                                handleShareList={handleShareList}
                                                 handleAddItemClick={handleAddItemClick}
                                                 user={user}
                                                 itemsList={itemsList}

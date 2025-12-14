@@ -9,7 +9,6 @@ const InventoryView = ({
     activeTab,
     titleText,
     currentList,
-    handleShareList,
     handleAddItemClick,
     user,
     itemsList,
