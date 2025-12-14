@@ -78,7 +78,7 @@ const ItemCard = ({ item, updateStock, deleteItem, user, markAsReplaced, isMobil
                         {needsRestock ? (
                             <Badge variant="destructive" className="h-6 font-bold px-1.5">需补货</Badge>
                         ) : (
-                            <Badge variant="outline" className="h-6 text-green-600 border-green-200 px-1.5">充足</Badge>
+                            <Badge variant="outline" className="h-6 text-green-600 border-green-200 dark:text-green-400 dark:border-green-800 px-1.5">充足</Badge>
                         )}
                         <ConfirmDialog
                             title="确定要删除此项目吗？"
@@ -133,10 +133,10 @@ const ItemCard = ({ item, updateStock, deleteItem, user, markAsReplaced, isMobil
                             <div className="flex items-center gap-2">
                                 {expInfo ? (
                                     <>
-                                        {expInfo.status === 'expired' ? <AlertTriangle className="h-4 w-4 text-destructive" /> :
-                                            expInfo.status === 'warning' ? <Clock className="h-4 w-4 text-orange-500" /> :
-                                                <CalendarClock className="h-4 w-4 text-green-500" />}
-                                        <span className={`text-sm ${expInfo.status === 'expired' ? 'text-destructive font-medium' : expInfo.status === 'warning' ? 'text-orange-500' : 'text-foreground'}`}>
+                                        {expInfo.status === 'expired' ? <AlertTriangle className="h-4 w-4 text-destructive dark:text-red-400" /> :
+                                            expInfo.status === 'warning' ? <Clock className="h-4 w-4 text-orange-500 dark:text-orange-400" /> :
+                                                <CalendarClock className="h-4 w-4 text-green-500 dark:text-green-400" />}
+                                        <span className={`text-sm ${expInfo.status === 'expired' ? 'text-destructive dark:text-red-400 font-medium' : expInfo.status === 'warning' ? 'text-orange-500 dark:text-orange-400' : 'text-foreground'}`}>
                                             {expInfo.status === 'expired' ? `已过期 ${expInfo.days} 天` :
                                                 expInfo.status === 'warning' ? `${expInfo.days} 天后过期` :
                                                     item.expirationDate}
@@ -144,10 +144,10 @@ const ItemCard = ({ item, updateStock, deleteItem, user, markAsReplaced, isMobil
                                     </>
                                 ) : (
                                     <>
-                                        {periodicInfo.status === 'expired' ? <AlertTriangle className="h-4 w-4 text-destructive" /> :
-                                            periodicInfo.status === 'warning' ? <Clock className="h-4 w-4 text-orange-500" /> :
-                                                <History className="h-4 w-4 text-green-500" />}
-                                        <span className={`text-sm ${periodicInfo.status === 'expired' ? 'text-destructive font-medium' : periodicInfo.status === 'warning' ? 'text-orange-500' : 'text-foreground'}`}>
+                                        {periodicInfo.status === 'expired' ? <AlertTriangle className="h-4 w-4 text-destructive dark:text-red-400" /> :
+                                            periodicInfo.status === 'warning' ? <Clock className="h-4 w-4 text-orange-500 dark:text-orange-400" /> :
+                                                <History className="h-4 w-4 text-green-500 dark:text-green-400" />}
+                                        <span className={`text-sm ${periodicInfo.status === 'expired' ? 'text-destructive dark:text-red-400 font-medium' : periodicInfo.status === 'warning' ? 'text-orange-500 dark:text-orange-400' : 'text-foreground'}`}>
                                             {periodicInfo.status === 'expired' ? `超期 ${periodicInfo.days} 天` :
                                                 periodicInfo.status === 'warning' ? `${periodicInfo.days} 天后更换` :
                                                     `${periodicInfo.days} 天后更换`}

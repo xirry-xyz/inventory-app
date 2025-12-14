@@ -98,7 +98,7 @@ const InventoryTable = ({ items, updateStock, deleteItem, user, markAsReplaced }
                                             需补货
                                         </Badge>
                                     ) : (
-                                        <Badge variant="outline" className="text-green-600 border-green-200">
+                                        <Badge variant="outline" className="text-green-600 border-green-200 dark:text-green-400 dark:border-green-800">
                                             充足
                                         </Badge>
                                     )}
@@ -132,12 +132,12 @@ const InventoryTable = ({ items, updateStock, deleteItem, user, markAsReplaced }
                                 <TableCell>
                                     {expInfo ? (
                                         <div className="flex items-center gap-2">
-                                            {expInfo.status === 'expired' ? <AlertTriangle className="h-4 w-4 text-destructive" /> :
-                                                expInfo.status === 'warning' ? <Clock className="h-4 w-4 text-orange-500" /> :
-                                                    <CalendarClock className="h-4 w-4 text-green-500" />}
+                                            {expInfo.status === 'expired' ? <AlertTriangle className="h-4 w-4 text-destructive dark:text-red-400" /> :
+                                                expInfo.status === 'warning' ? <Clock className="h-4 w-4 text-orange-500 dark:text-orange-400" /> :
+                                                    <CalendarClock className="h-4 w-4 text-green-500 dark:text-green-400" />}
                                             <span className={
-                                                expInfo.status === 'expired' ? 'text-destructive font-medium' :
-                                                    expInfo.status === 'warning' ? 'text-orange-500' : 'text-muted-foreground'
+                                                expInfo.status === 'expired' ? 'text-destructive dark:text-red-400 font-medium' :
+                                                    expInfo.status === 'warning' ? 'text-orange-500 dark:text-orange-400' : 'text-muted-foreground'
                                             }>
                                                 {expInfo.status === 'expired' ? `已过期 ${expInfo.days} 天` :
                                                     expInfo.status === 'warning' ? `${expInfo.days} 天后` :
@@ -146,12 +146,12 @@ const InventoryTable = ({ items, updateStock, deleteItem, user, markAsReplaced }
                                         </div>
                                     ) : periodicInfo ? (
                                         <div className="flex items-center gap-2">
-                                            {periodicInfo.status === 'expired' ? <AlertTriangle className="h-4 w-4 text-destructive" /> :
-                                                periodicInfo.status === 'warning' ? <Clock className="h-4 w-4 text-orange-500" /> :
-                                                    <History className="h-4 w-4 text-green-500" />}
+                                            {periodicInfo.status === 'expired' ? <AlertTriangle className="h-4 w-4 text-destructive dark:text-red-400" /> :
+                                                periodicInfo.status === 'warning' ? <Clock className="h-4 w-4 text-orange-500 dark:text-orange-400" /> :
+                                                    <History className="h-4 w-4 text-green-500 dark:text-green-400" />}
 
-                                            <span className={`text-sm ${periodicInfo.status === 'expired' ? 'text-destructive font-medium' :
-                                                periodicInfo.status === 'warning' ? 'text-orange-500' : 'text-muted-foreground'
+                                            <span className={`text-sm ${periodicInfo.status === 'expired' ? 'text-destructive dark:text-red-400 font-medium' :
+                                                periodicInfo.status === 'warning' ? 'text-orange-500 dark:text-orange-400' : 'text-muted-foreground'
                                                 }`}>
                                                 {periodicInfo.status === 'expired' ? `超期 ${periodicInfo.days} 天` :
                                                     periodicInfo.status === 'warning' ? `${periodicInfo.days} 天后` :

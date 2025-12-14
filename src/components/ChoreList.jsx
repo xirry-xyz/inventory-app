@@ -85,7 +85,7 @@ const ChoreList = ({ chores, onComplete, onDelete, onEdit, user }) => {
                                     </div>
                                     <Badge
                                         variant={status.variant === 'warning' ? 'secondary' : status.variant}
-                                        className={`${status.variant === 'warning' ? 'bg-orange-500/10 text-orange-600 hover:bg-orange-500/20' : ''} whitespace-nowrap`}
+                                        className={`${status.variant === 'warning' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20' : ''} whitespace-nowrap`}
                                     >
                                         {status.label}
                                     </Badge>
