@@ -7,7 +7,11 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { LogOut, Chrome, AlertCircle, CheckCircle2, Bell, Loader2 } from 'lucide-react';
+import { useTheme } from "./ThemeProvider"
+import { Sun, Moon, Laptop } from "lucide-react"
+import { ConfirmDialog } from "./ConfirmDialog"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 const SettingsPage = ({
     user,
@@ -17,9 +21,7 @@ const SettingsPage = ({
     setShowAuthModal,
     handleGoogleSignIn,
     handleSignOut,
-
     showStatus,
-
     pushToken,
     pushError,
     permissionStatus,
@@ -27,6 +29,7 @@ const SettingsPage = ({
     pushLoading
 }) => {
     const isGoogleUser = !!user && !!user.uid;
+    const { theme, setTheme } = useTheme()
 
     return (
         <Card>
@@ -34,6 +37,32 @@ const SettingsPage = ({
                 <CardTitle>用户与应用设置</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+
+                {/* Theme Settings */}
+                <div className="bg-card border rounded-lg p-6 space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground">外观设置</h3>
+                    <RadioGroup defaultValue={theme} onValueChange={setTheme} className="flex gap-4">
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="light" id="light" />
+                            <Label htmlFor="light" className="flex items-center gap-1 cursor-pointer">
+                                <Sun className="h-4 w-4" /> 亮色
+                            </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="dark" id="dark" />
+                            <Label htmlFor="dark" className="flex items-center gap-1 cursor-pointer">
+                                <Moon className="h-4 w-4" /> 深色
+                            </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="system" id="system" />
+                            <Label htmlFor="system" className="flex items-center gap-1 cursor-pointer">
+                                <Laptop className="h-4 w-4" /> 跟随系统
+                            </Label>
+                        </div>
+                    </RadioGroup>
+                </div>
+
                 <div className="bg-card border rounded-lg p-6 space-y-4">
                     <h3 className="text-sm font-medium text-muted-foreground">登录状态</h3>
                     {isGoogleUser ? (
@@ -127,12 +156,11 @@ const SettingsPage = ({
 
                 <div className="bg-card border rounded-lg p-6 space-y-4">
                     <h3 className="text-sm font-medium text-muted-foreground">高级设置</h3>
-                    <Button
-                        variant="outline"
-                        onClick={async () => {
+                    <ConfirmDialog
+                        title="确定要重置通知设置吗？"
+                        description="这将清除所有已注册的设备，您需要在刷新页面后重新授权。此操作无法撤销。"
+                        onConfirm={async () => {
                             if (!user) return;
-                            if (!confirm('确定要重置通知设置吗？这将清除所有已注册的设备，您需要在刷新页面后重新授权。')) return;
-
                             try {
                                 const { doc, updateDoc, deleteField } = await import('firebase/firestore');
                                 const { db, appId } = await import('../firebase');
@@ -150,9 +178,11 @@ const SettingsPage = ({
                             }
                         }}
                     >
-                        <Bell className="mr-2 h-4 w-4" />
-                        重置通知推送
-                    </Button>
+                        <Button variant="outline">
+                            <Bell className="mr-2 h-4 w-4" />
+                            重置通知推送
+                        </Button>
+                    </ConfirmDialog>
                     <p className="text-xs text-muted-foreground">如果遇到收不到通知或重复通知的问题，请尝试此操作。</p>
 
                     {/* Permission Blocked Guidance */}

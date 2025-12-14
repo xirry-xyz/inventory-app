@@ -31,6 +31,7 @@ import ChoreForm from './components/ChoreForm';
 import ChoreCalendar from './components/ChoreCalendar';
 import DashboardStats from './components/DashboardStats';
 import FilterBar from './components/FilterBar';
+import { InviteMemberDialog } from './components/InviteMemberDialog';
 
 const App = () => {
     // Hooks
@@ -110,13 +111,7 @@ const App = () => {
     const handleRenameList = (id, name) => renameList(id, name, showStatus);
     const handleDeleteList = (id) => deleteList(id, showStatus);
 
-    const handleShareList = () => {
-        if (!currentList) return;
-        const email = prompt("请输入要邀请的用户 Gmail 地址:");
-        if (email) {
-            sendInvite(email, currentList.id, currentList.name, showStatus);
-        }
-    };
+
 
     const handleAddItemClick = () => {
         if (!user || !user.uid) {
@@ -277,14 +272,9 @@ const App = () => {
                                             {currentList.memberEmails ? currentList.memberEmails.join(', ') : `${currentList.members ? currentList.members.length : 0} 人`}
                                         </p>
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleShareList}
-                                    >
-                                        <Plus className="mr-2 h-4 w-4" /> {/* Or UserPlus/Share icon */}
-                                        邀请新成员
-                                    </Button>
+                                    <InviteMemberDialog
+                                        onInvite={(email) => sendInvite(email, currentList.id, currentList.name, showStatus)}
+                                    />
                                     {/* Ideally we use Share2 or UserPlus icon, but Plus is imported. Let's stick to Share logic if we have the icon, or standard Plus. */}
                                 </div>
                             )}
