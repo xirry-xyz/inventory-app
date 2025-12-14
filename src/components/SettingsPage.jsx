@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "./ThemeProvider"
-import { Sun, Moon, Laptop } from "lucide-react"
+import { Sun, Moon, Laptop, CheckCircle2, AlertCircle, Bell, Loader2, LogOut, Chrome } from "lucide-react"
 import { ConfirmDialog } from "./ConfirmDialog"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
