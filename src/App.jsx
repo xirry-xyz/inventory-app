@@ -38,7 +38,7 @@ const App = () => {
     // Hooks
     const {
         user, userId, isAuthReady, configError, showAuthModal, setShowAuthModal,
-        handleGoogleSignIn, handleSignOut, setConfigError
+        handleGoogleSignIn, handleSignOut, setConfigError, updateDisplayName
     } = useAuth();
 
     // Shared Lists & Invitations Hooks
@@ -248,6 +248,7 @@ const App = () => {
                         permissionStatus={permissionStatus}
                         enablePush={enablePush}
                         pushLoading={pushLoading}
+                        updateDisplayName={updateDisplayName}
                     />
                 ) : activeTab === 'notifications' ? (
                     <NotificationPage
