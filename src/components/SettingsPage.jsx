@@ -11,7 +11,7 @@ import { useTheme } from "./ThemeProvider"
 import { Sun, Moon, Laptop, CheckCircle2, AlertCircle, Bell, Loader2, LogOut, Chrome, Edit2, Save, X } from "lucide-react"
 import { ConfirmDialog } from "./ConfirmDialog"
 import { Label } from "@/components/ui/label"
-import { Label } from "@/components/ui/label"
+
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 
