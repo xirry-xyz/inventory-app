@@ -148,7 +148,9 @@ export const useChores = (user, currentList) => {
             await updateDoc(choreRef, {
                 lastCompleted: latestCompletion.toISOString(),
                 nextDue: nextDueDate.toISOString(),
-                completionHistory: arrayUnion(completionISO)
+                completionHistory: arrayUnion(completionISO),
+                completedBy: user.uid,
+                completedByName: user.displayName || user.email || '未知用户'
             });
             showStatus('家务已完成！');
         } catch (err) {
