@@ -32,6 +32,7 @@ import ChoreCalendar from './components/ChoreCalendar';
 import DashboardStats from './components/DashboardStats';
 import FilterBar from './components/FilterBar';
 import { InviteMemberDialog } from './components/InviteMemberDialog';
+import ManageMembersDialog from './components/ManageMembersDialog';
 
 const App = () => {
     // Hooks
@@ -41,7 +42,7 @@ const App = () => {
     } = useAuth();
 
     // Shared Lists & Invitations Hooks
-    const { sharedLists, loadingLists, loadingPreferences, createList, renameList, deleteList, mainListName, mainListDeleted, defaultListId, setDefaultList } = useSharedLists(user);
+    const { sharedLists, loadingLists, loadingPreferences, createList, renameList, deleteList, mainListName, mainListDeleted, defaultListId, setDefaultList, removeMember } = useSharedLists(user);
     const { invitations, sendInvite, acceptInvite, declineInvite } = useInvitations(user);
 
     // Local State
@@ -94,6 +95,7 @@ const App = () => {
     const [activeCategory, setActiveCategory] = useState('全部');
     const [showItemModal, setShowItemModal] = useState(false);
     const [showChoreModal, setShowChoreModal] = useState(false);
+    const [showManageMembersModal, setShowManageMembersModal] = useState(false); // State for Manage Members Dialog
     const [newItem, setNewItem] = useState({ name: '', safetyStock: 1, currentStock: 0, category: '日用百货', expirationDate: '' });
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState('chores');
@@ -267,7 +269,11 @@ const App = () => {
                                             </h2>
                                             {/* We can re-add badge if desired, but maybe clean is better */}
                                         </div>
-                                        <p className="text-sm text-muted-foreground flex items-center gap-2 bg-muted/50 px-2 py-1 rounded w-fit">
+                                        <p
+                                            className="text-sm text-muted-foreground flex items-center gap-2 bg-muted/50 px-2 py-1 rounded w-fit cursor-pointer hover:bg-muted transition-colors"
+                                            onClick={() => setShowManageMembersModal(true)}
+                                            title="点击管理成员"
+                                        >
                                             <span className="font-medium text-foreground">成员:</span>
                                             {currentList.memberEmails ? currentList.memberEmails.join(', ') : `${currentList.members ? currentList.members.length : 0} 人`}
                                         </p>
@@ -417,6 +423,15 @@ const App = () => {
                         onCancel={() => setShowChoreModal(false)}
                     />
                 </CustomModal>
+
+                <ManageMembersDialog
+                    isOpen={showManageMembersModal}
+                    onClose={() => setShowManageMembersModal(false)}
+                    list={currentList}
+                    currentAtomicUser={user}
+                    onRemoveMember={removeMember}
+                    showStatus={showStatus}
+                />
 
                 <AuthModal
                     isOpen={showAuthModal && !configError}

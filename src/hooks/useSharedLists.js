@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-    collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, setDoc, collectionGroup, getDocs
+    collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, setDoc, collectionGroup, getDocs, arrayRemove
 } from 'firebase/firestore';
 import { db, appId } from '../firebase';
 
@@ -177,6 +177,42 @@ export const useSharedLists = (user) => {
         }
     };
 
+    const removeMember = async (listId, email, showStatus) => {
+        if (!user || !user.uid) return false;
+
+        try {
+            const list = sharedLists.find(l => l.id === listId);
+            if (!list) throw new Error("List not found locally");
+
+            // Only owner can remove members (simple check, safer rules on backend)
+            if (list.ownerId !== user.uid) {
+                showStatus('只有列表所有者可以移除成员', true);
+                return false;
+            }
+
+            if (email === list.ownerEmail) {
+                showStatus('不能移除所有者', true);
+                return false;
+            }
+
+            const listRef = doc(db, list.path);
+
+            // We only remove the email from memberEmails array. 
+            // We cannot reliably remove the UID from 'members' because we don't have the mapping here.
+            await updateDoc(listRef, {
+                memberEmails: arrayRemove(email),
+                updatedAt: serverTimestamp()
+            });
+
+            showStatus(`成员 ${email} 已移除`);
+            return true;
+        } catch (error) {
+            console.error("Error removing member:", error);
+            showStatus(`移除失败: ${error.message}`, true);
+            return false;
+        }
+    };
+
     return {
         sharedLists,
         loadingLists,
@@ -187,6 +223,7 @@ export const useSharedLists = (user) => {
         mainListName,
         mainListDeleted, // Exposed state
         defaultListId,
-        setDefaultList
+        setDefaultList,
+        removeMember
     };
 };
