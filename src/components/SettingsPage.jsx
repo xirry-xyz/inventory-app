@@ -8,10 +8,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTheme } from "./ThemeProvider"
-import { Sun, Moon, Laptop, CheckCircle2, AlertCircle, Bell, Loader2, LogOut, Chrome } from "lucide-react"
+import { Sun, Moon, Laptop, CheckCircle2, AlertCircle, Bell, Loader2, LogOut, Chrome, Edit2, Save, X } from "lucide-react"
 import { ConfirmDialog } from "./ConfirmDialog"
 import { Label } from "@/components/ui/label"
+import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Input } from "@/components/ui/input"
 
 const SettingsPage = ({
     user,
@@ -26,10 +28,31 @@ const SettingsPage = ({
     pushError,
     permissionStatus,
     enablePush,
-    pushLoading
+    pushLoading,
+    updateDisplayName // New Prop
 }) => {
     const isGoogleUser = !!user && !!user.uid;
     const { theme, setTheme } = useTheme()
+
+    // Edit Name State
+    const [isEditingName, setIsEditingName] = React.useState(false);
+    const [newName, setNewName] = React.useState('');
+
+    const handleStartEdit = () => {
+        setNewName(user.displayName || '');
+        setIsEditingName(true);
+    };
+
+    const handleSaveName = async () => {
+        if (!newName.trim()) {
+            showStatus('昵称不能为空', true);
+            return;
+        }
+        const success = await updateDisplayName(newName, showStatus);
+        if (success) {
+            setIsEditingName(false);
+        }
+    };
 
     return (
         <Card>
@@ -72,7 +95,39 @@ const SettingsPage = ({
                                     <CheckCircle2 className="h-5 w-5" />
                                     已通过 Google 登录
                                 </div>
-                                <p className="text-sm text-muted-foreground">用户: {user.email || user.displayName || 'Google 用户'}</p>
+
+                                <div className="flex items-center gap-2">
+                                    {isEditingName ? (
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                value={newName}
+                                                onChange={(e) => setNewName(e.target.value)}
+                                                className="h-8 w-40"
+                                                placeholder="输入新昵称"
+                                            />
+                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleSaveName}>
+                                                <Save className="h-4 w-4" />
+                                            </Button>
+                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => setIsEditingName(false)}>
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm text-muted-foreground">用户: {user.displayName || user.email || 'Google 用户'}</p>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                                                onClick={handleStartEdit}
+                                                title="修改昵称"
+                                            >
+                                                <Edit2 className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <p className="text-xs text-muted-foreground/50 break-all font-mono">ID: {userId}</p>
                                 <div className="flex items-center gap-2 text-sm mt-2">
                                     <span className="text-muted-foreground">推送服务:</span>

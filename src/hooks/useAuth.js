@@ -3,9 +3,11 @@ import {
     onAuthStateChanged,
     signInWithPopup,
     signOut,
-    signInWithCustomToken
+    signInWithCustomToken,
+    updateProfile
 } from 'firebase/auth';
-import { auth, googleProvider, initializationError, initialAuthToken } from '../firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db, auth, googleProvider, initializationError, initialAuthToken, appId } from '../firebase';
 
 export const useAuth = () => {
     const [user, setUser] = useState(null);
@@ -93,6 +95,34 @@ export const useAuth = () => {
         }
     };
 
+    const updateDisplayName = async (newName, showStatus) => {
+        if (!auth.currentUser) return false;
+
+        try {
+            // 1. Update Auth Profile
+            await updateProfile(auth.currentUser, {
+                displayName: newName
+            });
+
+            // 2. Update Firestore User Document
+            const userRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}`);
+            await updateDoc(userRef, {
+                displayName: newName
+            });
+
+            // 3. Update local state
+            // Force a new object to trigger re-renders
+            setUser({ ...auth.currentUser, displayName: newName });
+
+            showStatus('昵称修改成功！', false);
+            return true;
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            showStatus(`修改失败: ${error.message}`, true);
+            return false;
+        }
+    };
+
     return {
         user,
         userId,
@@ -102,6 +132,9 @@ export const useAuth = () => {
         setShowAuthModal,
         handleGoogleSignIn,
         handleSignOut,
+        handleGoogleSignIn,
+        handleSignOut,
+        updateDisplayName,
         setConfigError
     };
 };
