@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getMessaging, getToken, isSupported } from "firebase/messaging";
+import { useState, useEffect, useRef } from 'react';
+import { getMessaging, getToken, isSupported, onMessage } from "firebase/messaging";
 import { doc, setDoc } from "firebase/firestore";
 import { db, appId } from '../firebase';
 import { useToast } from "@/hooks/use-toast";
@@ -124,6 +124,50 @@ export const usePushToken = (user) => {
             }
         }
     }, [user, toast]);
+
+    // Set up foreground message listener
+    const unsubscribeRef = useRef(null);
+
+    useEffect(() => {
+        const setupForegroundListener = async () => {
+            try {
+                const supported = await isSupported();
+                if (!supported) return;
+
+                const messaging = getMessaging();
+
+                // Clean up previous listener if exists
+                if (unsubscribeRef.current) {
+                    unsubscribeRef.current();
+                }
+
+                // Listen for messages when the app is in the foreground
+                unsubscribeRef.current = onMessage(messaging, (payload) => {
+                    console.log('[Foreground] Message received:', payload);
+
+                    // Show toast notification
+                    const title = payload.notification?.title || '新消息';
+                    const body = payload.notification?.body || '';
+
+                    toast({
+                        title: title,
+                        description: body,
+                        duration: 10000, // Show for 10 seconds
+                    });
+                });
+            } catch (error) {
+                console.error('Error setting up foreground message listener:', error);
+            }
+        };
+
+        setupForegroundListener();
+
+        return () => {
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+            }
+        };
+    }, [toast]);
 
     return { token, error: tokenError, permissionStatus, register, isLoading };
 };
