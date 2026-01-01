@@ -154,8 +154,36 @@ async function sendNotifications() {
 
         sendPromises.push(
             messaging.sendEachForMulticast(message)
-                .then(response => {
+                .then(async (response) => {
                     console.log(`User ${userId}: Sent! Success: ${response.successCount}, Fail: ${response.failureCount}`);
+
+                    // Clean up invalid tokens after failed sends
+                    if (response.failureCount > 0) {
+                        const tokensToRemove = [];
+                        const tokens = [...new Set(userInfo.tokens)];
+
+                        response.responses.forEach((resp, idx) => {
+                            if (!resp.success) {
+                                const errorCode = resp.error?.code;
+                                // Remove tokens that are invalid, unregistered, or have sender ID mismatch
+                                if (errorCode === 'messaging/invalid-registration-token' ||
+                                    errorCode === 'messaging/registration-token-not-registered' ||
+                                    errorCode === 'messaging/mismatched-credential') {
+                                    tokensToRemove.push(tokens[idx]);
+                                    console.log(`  - Removing invalid token (${errorCode}): ${tokens[idx].substring(0, 20)}...`);
+                                }
+                            }
+                        });
+
+                        // Update Firestore to remove invalid tokens
+                        if (tokensToRemove.length > 0) {
+                            const userRef = db.doc(`artifacts/${TARGET_APP_ID}/users/${userId}`);
+                            await userRef.update({
+                                fcmTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove)
+                            });
+                            console.log(`  - Removed ${tokensToRemove.length} invalid token(s) from user ${userId}`);
+                        }
+                    }
                 })
                 .catch(error => {
                     console.log(`User ${userId}: Error sending:`, error.message);

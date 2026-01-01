@@ -2,11 +2,11 @@ name: Send Chore Notifications
 
 on:
   schedule:
-    # Run every 2 hours.
+    # Run every hour.
     # Note: GitHub Actions schedule uses UTC.
     # Beijing Time (UTC+8) 10:00 - 20:00 = UTC 02:00 - 12:00
-    # Cron: "0 2-12/2 * * *" -> At minute 0 past every 2nd hour from 2 through 12.
-    - cron: '0 2-12/2 * * *'
+    # Cron: "0 2-12 * * *" -> At minute 0 past every hour from 2 through 12.
+    - cron: '0 2-12 * * *'
   workflow_dispatch: # Allow manual trigger for testing
 
 jobs:
