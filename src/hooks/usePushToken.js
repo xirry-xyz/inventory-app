@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getMessaging, getToken, isSupported } from "firebase/messaging";
-import { doc, setDoc, arrayUnion } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { db, appId } from '../firebase';
 import { useToast } from "@/hooks/use-toast";
 
@@ -76,10 +76,12 @@ export const usePushToken = (user) => {
                     if (currentToken) {
                         setToken(currentToken);
                         setTokenError(null);
-                        // Save token to Firestore
+                        // Save token to Firestore - replace existing tokens instead of accumulating
+                        // This ensures we always use the most recent, active token
                         const userRef = doc(db, `artifacts/${appId}/users/${user.uid}`);
                         await setDoc(userRef, {
-                            fcmTokens: arrayUnion(currentToken)
+                            fcmTokens: [currentToken],
+                            fcmTokenUpdatedAt: new Date()
                         }, { merge: true });
 
                         console.log("Token saved/updated for user:", user.uid);
